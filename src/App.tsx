@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Config from "./components/Config";
 import Header from "./components/Header";
 
@@ -34,6 +35,8 @@ export const THEME = {
 export type ThemeType = typeof THEME;
 
 export default function App() {
+  const [showConfigWindow, SetShowConfigWindow] = useState(true)
+  const [showIde, setShowIde] = useState(false)
   return (
     <div className={`flex flex-col h-screen w-screen overflow-hidden ${THEME.bgApp} text-slate-100 ${THEME.fontSans}`}>
       <Header theme={THEME}/>
@@ -49,23 +52,69 @@ export default function App() {
         {/* Sidebar */}
         <section className={`w-[25%] h-full ${THEME.bgSidebar} flex flex-col`}>
           {/* IDE Window */}
-          <div className={`flex-1 ${THEME.border} border-b p-4 flex flex-col`}>
-            <h2 className={`text-xs font-semibold uppercase tracking-wider ${THEME.textTitle} mb-2`}>
-              IDE Window
-            </h2>
-            <div className={`flex-1 ${THEME.bgPanelInner} rounded-lg p-3 text-sm ${THEME.fontMono} ${THEME.textMuted} ${THEME.borderSubtle} border`}>
-              // Code editor goes here...
-            </div>
+          <div className={`${showIde ? "flex-1" : "flex-none"} ${THEME.border} border-b p-4 flex flex-col transition-all duration-200 min-h-0`}>
+            {/* Header / Toggle Button */}
+            <button
+              onClick={() => setShowIde(!showIde)}
+              className="flex items-center justify-between w-full mb-2 group cursor-pointer border-none bg-transparent p-0 text-left outline-none"
+            >
+              <h2 className={`text-xs font-semibold uppercase tracking-wider ${THEME.textTitle} group-hover:text-gray-900 transition-colors`}>
+                IDE Window
+              </h2>
+              
+              {/* Chevron Arrow */}
+              <svg
+                className={`w-4 h-4 ${THEME.textMuted} transform transition-transform duration-200 ${
+                  showIde ? "rotate-0" : "-rotate-90"
+                }`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {/* Collapsable Content */}
+            {showIde && (
+              <div className={`flex-1 ${THEME.bgPanelInner} rounded-lg p-3 text-sm ${THEME.fontMono} ${THEME.textMuted} ${THEME.borderSubtle} border overflow-y-auto`}>
+                // Code editor goes here...
+              </div>
+            )}
           </div>
 
           {/* Config Window */}
-          <div className="flex-1 p-4 flex flex-col">
-            <h2 className={`text-xs font-semibold uppercase tracking-wider ${THEME.textTitle} mb-2`}>
-              Config Window
-            </h2>
-            <div className={`flex-1 ${THEME.bgPanelInner} rounded-lg p-3 text-sm ${THEME.textMuted} ${THEME.borderSubtle} border overflow-y-auto`}>
-              <Config theme={THEME} />
-            </div>
+          <div className={`${showConfigWindow ? "flex-1" : "flex-none"} p-4 flex flex-col transition-all duration-200 min-h-0`}>
+            {/* Header / Toggle Button */}
+            <button
+              onClick={() => SetShowConfigWindow(!showConfigWindow)}
+              className="flex items-center justify-between w-full mb-2 group cursor-pointer border-none bg-transparent p-0 text-left outline-none"
+            >
+              <h2 className={`text-xs font-semibold uppercase tracking-wider ${THEME.textTitle} group-hover:text-gray-900 transition-colors`}>
+                Config Window
+              </h2>
+              
+              {/* Chevron Arrow */}
+              <svg
+                className={`w-4 h-4 ${THEME.textMuted} transform transition-transform duration-200 ${
+                  showConfigWindow ? "rotate-0" : "-rotate-90"
+                }`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {/* Collapsable Content */}
+            {showConfigWindow && (
+              <div className={`flex-1 ${THEME.bgPanelInner} rounded-lg p-3 text-sm ${THEME.textMuted} ${THEME.borderSubtle} border overflow-y-auto`}>
+                <Config theme={THEME} />
+              </div>
+            )}
           </div>
         </section>
       </main>
