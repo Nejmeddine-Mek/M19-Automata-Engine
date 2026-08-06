@@ -10,4 +10,3 @@ export class ParsingManager{
 
     public getAutomatonType(): String { return this.automatonType }
 }
-
