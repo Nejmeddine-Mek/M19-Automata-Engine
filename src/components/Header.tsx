@@ -1,22 +1,21 @@
+import type { ThemeType } from "../App";
 
-
-function Header(){
-    return(
-        <>
-            <div className="w-full h-[80px] bg-slate-900 border-b border-slate-800 px-6 flex items-center justify-between shadow-md">
-                <div className="flex items-center space-x-3">
-                    {/* Optional Logo Placeholder */}
-                    <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-white shadow-inner">
-                        M
-                    </div>
-                    <h1 className="text-xl font-bold tracking-wide text-slate-100">
-                        M19 Automata Simulator
-                    </h1>
-                </div>
-            </div>
-        </>
-    )
+interface HeaderProps {
+  theme: ThemeType;
 }
 
-
-export default Header
+export default function Header({ theme }: HeaderProps) {
+  return (
+    <div className={`w-full h-[80px] ${theme.bgSidebar} ${theme.border} border-b px-6 flex items-center justify-between shadow-sm`}>
+      <div className="flex items-center space-x-3">
+        {/* Logo Icon */}
+        <div className="w-10 h-10 rounded-xl bg-sky-500 flex items-center justify-center font-bold text-white shadow-inner">
+          M
+        </div>
+        <h1 className={`text-xl font-bold tracking-wide ${theme.textInput}`}>
+          M19 Automata Simulator
+        </h1>
+      </div>
+    </div>
+  );
+}

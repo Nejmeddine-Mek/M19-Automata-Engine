@@ -1,47 +1,74 @@
-import Header from "./components/Header"
+import Config from "./components/Config";
+import Header from "./components/Header";
 
-function App() {
+export const THEME = {
+  bgApp: "bg-gray-100",
+  bgSidebar: "bg-gray-200/50",
+  bgPanelInner: "bg-white",
+  bgInput: "bg-gray-50",
+  border: "border-gray-300",
+  borderSubtle: "border-gray-200",
+  textTitle: "text-gray-600",
+  textInput: "text-gray-900",
+  textMuted: "text-gray-500",
+  focusRing: "focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500",
+  fontSans: "font-sans",
+  fontMono: "font-mono",
+};
+/*
+export const THEME = {
+  bgApp: "bg-zinc-950",
+  bgSidebar: "bg-zinc-900/90",
+  bgPanelInner: "bg-zinc-900/40",
+  bgInput: "bg-zinc-950/80",
+  border: "border-zinc-800",
+  borderSubtle: "border-zinc-800/50",
+  textTitle: "text-zinc-400",
+  textInput: "text-zinc-100",
+  textMuted: "text-zinc-500",
+  focusRing: "focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500",
+  fontSans: "font-sans",
+  fontMono: "font-mono",
+};*/
 
+export type ThemeType = typeof THEME;
 
+export default function App() {
   return (
-    <>
-<div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans">
-      <Header />
+    <div className={`flex flex-col h-screen w-screen overflow-hidden ${THEME.bgApp} text-slate-100 ${THEME.fontSans}`}>
+      <Header theme={THEME}/>
 
-      {/* Main Content Area filling remaining space */}
       <main className="flex flex-1 w-full overflow-hidden">
-        
-        {/* 75% Left: Workspace */}
-        <section className="w-[75%] h-full bg-slate-950 border-r border-slate-800 p-6 flex items-center justify-center">
-          <div className="w-full h-full border-2 border-dashed border-slate-800 rounded-2xl flex items-center justify-center text-slate-600 font-medium">
+        {/* Workspace */}
+        <section className={`w-[75%] h-full ${THEME.bgApp} ${THEME.border} border-r p-6 flex items-center justify-center`}>
+          <div className={`w-full h-full border-2 border-dashed ${THEME.border} rounded-2xl flex items-center justify-center ${THEME.textMuted} font-medium`}>
             75% Workspace Area
           </div>
         </section>
 
-        {/* 25% Right: Split into IDE & Config */}
-        <section className="w-[25%] h-full bg-slate-900 flex flex-col">
-          {/* Top Half: IDE Window */}
-          <div className="flex-1 border-b border-slate-800 p-4 flex flex-col">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">IDE Window</h2>
-            <div className="flex-1 bg-slate-950/40 rounded-lg p-3 text-sm font-mono text-slate-500 border border-slate-800/60">
+        {/* Sidebar */}
+        <section className={`w-[25%] h-full ${THEME.bgSidebar} flex flex-col`}>
+          {/* IDE Window */}
+          <div className={`flex-1 ${THEME.border} border-b p-4 flex flex-col`}>
+            <h2 className={`text-xs font-semibold uppercase tracking-wider ${THEME.textTitle} mb-2`}>
+              IDE Window
+            </h2>
+            <div className={`flex-1 ${THEME.bgPanelInner} rounded-lg p-3 text-sm ${THEME.fontMono} ${THEME.textMuted} ${THEME.borderSubtle} border`}>
               // Code editor goes here...
             </div>
           </div>
 
-          {/* Bottom Half: Config Window */}
+          {/* Config Window */}
           <div className="flex-1 p-4 flex flex-col">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Config Window</h2>
-            <div className="flex-1 bg-slate-950/40 rounded-lg p-3 text-sm text-slate-500 border border-slate-800/60">
-              // Configurations go here...
+            <h2 className={`text-xs font-semibold uppercase tracking-wider ${THEME.textTitle} mb-2`}>
+              Config Window
+            </h2>
+            <div className={`flex-1 ${THEME.bgPanelInner} rounded-lg p-3 text-sm ${THEME.textMuted} ${THEME.borderSubtle} border overflow-y-auto`}>
+              <Config theme={THEME} />
             </div>
           </div>
         </section>
-
       </main>
     </div>
-      
-    </>
-  )
+  );
 }
-
-export default App
