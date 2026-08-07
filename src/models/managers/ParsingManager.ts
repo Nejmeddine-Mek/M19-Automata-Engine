@@ -7,6 +7,6 @@ export class ParsingManager{
     public constructor(automatonType: String){
         this.automatonType = automatonType
     }
-
+    
     public getAutomatonType(): String { return this.automatonType }
 }
