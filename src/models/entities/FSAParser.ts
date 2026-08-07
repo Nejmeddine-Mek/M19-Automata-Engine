@@ -1,11 +1,21 @@
 
 export class FSAParser{
     public readonly COMMENTS_SEPARATOR = ";"
-    private Alphabet: String[]
-    private Code: String
-    private epsilon: String
+    private readonly DIRECTIVES_SEPARATOR = ":"
+    private readonly COMMA = ","
+    // 
+    private readonly SPECIAL_CHARS = [
+    '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', 
+    '+', '=', '{', '}', '[', ']', '|', '\\', ':', '"', 
+    '\'', '<', '>', '?', '/', '`', '~'
+    ]
 
-    public constructor(alphabet: String[], code: String, epsilon: String){
+
+    private Alphabet: string[]
+    private Code: string
+    private epsilon: string
+
+    public constructor(alphabet: string[], code: string, epsilon: string){
         this.Alphabet = alphabet
         this.Code = code
         this.epsilon = epsilon
@@ -16,31 +26,97 @@ export class FSAParser{
         const cleanedCode = this.cleanCode()
         if(cleanedCode.length === 0)
                 return
+        if(cleanedCode.length < 2){
+            //TODO THROW AN ERROR INCOMPLETE CODE, NO INSTRUCTIONS
+            return
+        }
+        // the way this works should be as follows
+        let initialState : string
+        const finalStates : Set<string> = new Set<string>()
+
+        // INITIAL DIRECTIVE -------------------------
+        let lineTokens = cleanedCode[0].split(this.DIRECTIVES_SEPARATOR)
+        
+        if(lineTokens[0].toLocaleLowerCase() !== "initial"){
+            // TODO: throw a compile time error, no initial state declared
+        }
+
+        if (!lineTokens[1]) {
+            // TODO: throw error - directive missing value/separator
+            return;
+        }
+
+        //WE CAN MAKE SURE IT IS A SINGLETON BY CHECKING FOR SEPARATORS
+        if(this.containsForbiddenChar(lineTokens[1].trim())){
+            //TODO: throw an error, initial state contains forbidden chars
+        }
+
+        initialState = lineTokens[1].trim()
+
+        // FINAL DIRECTIVE -------------------
+        lineTokens = cleanedCode[1].split(this.DIRECTIVES_SEPARATOR)
+        if(lineTokens[0].toLocaleLowerCase() !== "final"){
+            //TODO: throw a compile time error, no final states declared
+
+        } 
+
+        if (!lineTokens[1]) {
+            // TODO: throw error or allow empty final states depending on your DSL spec
+        } else {
+            lineTokens[1]
+                .split(this.COMMA)
+                .map(token => token.trim())
+                .filter(token => token.length > 0)
+                .forEach(token => finalStates.add(token));
+        }
+
+        // PROCESS INSTRUCTIONS ---------------
+        // NOW WE GO THROUGH WHAT'S LEFT, AND ADD INTO THE MASTER OBJECT AS FOLLOWS
+        for(let i = 2; i < cleanedCode.length; ++i){
+            lineTokens = cleanedCode[i].split(this.COMMA).map(token => token.trim())
+            //FIRST, check if the tokens match the expected number 3
+            if(lineTokens.length !== 3){
+                //TODO: throw an error number of tokens mismatches the DSL structure
+            }
+            // NOW WE CAN CHECK IF THE FIRST STATE IN THE FIRST LINE IS INITIAL OR NOT, WE MAY ALSO SKIP IT
+            // PREDICTION WISE, THE MISS RATE WILL BE LOW BECAUSE THE IF EXECUTES ONLY ONCE
+            if(i === 2 && lineTokens[0] !== initialState){
+                // TODO: THROW AN ERROR, FIRST STATE IS NOT INITIAL
+            }
+        }
+
+
         
     }
 
-    // THIS cleans the code, removes comments and empty lines from our code, keeping only instructions
-    private cleanCode(): String[] {
-        if(this.Code === "")
-            return []
-        
-        // FIRST: SPLIT THE CODE INTO LINES
-        const lines = this.Code.split("\n").filter( line => line.length !== 0)
 
-        const cleanedCode: String[] = []
-        // SECOND REMOVE COMMENTS AND RETURN THE FIRST ELEMENT WHICH SHOULD BE THE INSTRUCTIONSs
-        for(const line of lines){
-            const commentsSeparated = line.split(this.COMMENTS_SEPARATOR)
-            cleanedCode.push(commentsSeparated[0])
+    // THIS cleans the code, removes comments and empty lines from our code, keeping only instructions as String[]
+    private cleanCode(): string[] {
+        if (!this.Code || this.Code.trim() === "") {
+            return [];
         }
 
+        const lines = this.Code.split("\n");
+        const cleanedCode: string[] = [];
+
+        for (const line of lines) {
+            // Strip comments from the line
+            const instruction = line.split(this.COMMENTS_SEPARATOR)[0].trim();
+
+            // Only keep lines that have actual code content
+            if (instruction.length > 0) {
+                cleanedCode.push(instruction);
+            }
+        }
         return cleanedCode
     }
 
 
 
-
-
+    // Helper method to check if a token contains any forbidden special character
+    private containsForbiddenChar(token: string): boolean {
+    return this.SPECIAL_CHARS.some(char => token.includes(char));
+    }
     public getAlphabet(): String[]{ return this.Alphabet }
     public getCode(): String{ return this.Code }
     public getEpsilon():String{ return this.epsilon }

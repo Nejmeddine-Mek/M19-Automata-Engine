@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Config from "./components/Config";
 import Header from "./components/Header";
+import { ParsingManager } from "./models/managers/ParsingManager";
 
 export const THEME = {
   bgApp: "bg-gray-100",
@@ -37,6 +38,7 @@ export type ThemeType = typeof THEME;
 export default function App() {
   const [showConfigWindow, SetShowConfigWindow] = useState(true)
   const [showIde, setShowIde] = useState(false)
+
   return (
     <div className={`flex flex-col h-screen w-screen overflow-hidden ${THEME.bgApp} text-slate-100 ${THEME.fontSans}`}>
       <Header theme={THEME}/>
