@@ -1,6 +1,7 @@
+import type { FsaDefinition } from "../interfaces/FsaDefinition"
+import CleaningService from "../services/CleaningService"
 
 export class FSAParser{
-    public readonly COMMENTS_SEPARATOR = ";"
     private readonly DIRECTIVES_SEPARATOR = ":"
     private readonly COMMA = ","
     // 
@@ -11,24 +12,25 @@ export class FSAParser{
     ]
 
 
-    private Alphabet: string[]
+    private Alphabet: Set<string>
     private Code: string
     private epsilon: string
 
     public constructor(alphabet: string[], code: string, epsilon: string){
-        this.Alphabet = alphabet
+        this.Alphabet = new Set(alphabet)
         this.Code = code
         this.epsilon = epsilon
     }   
 
     // TODO: this is set to void for now, this should return the parsed object which the engine should be using when reading the tape
-    public parseInstructions(): void{
-        const cleanedCode = this.cleanCode()
+    public parseInstructions(): FsaDefinition | null {
+
+        const cleanedCode = CleaningService(this.Code)
         if(cleanedCode.length === 0)
-                return
+                return null
         if(cleanedCode.length < 2){
             //TODO THROW AN ERROR INCOMPLETE CODE, NO INSTRUCTIONS
-            return
+            return null
         }
         // the way this works should be as follows
         let initialState : string
@@ -43,7 +45,7 @@ export class FSAParser{
 
         if (!lineTokens[1]) {
             // TODO: throw error - directive missing value/separator
-            return;
+            return null
         }
 
         //WE CAN MAKE SURE IT IS A SINGLETON BY CHECKING FOR SEPARATORS
@@ -69,9 +71,11 @@ export class FSAParser{
                 .filter(token => token.length > 0)
                 .forEach(token => finalStates.add(token));
         }
-
+    
         // PROCESS INSTRUCTIONS ---------------
         // NOW WE GO THROUGH WHAT'S LEFT, AND ADD INTO THE MASTER OBJECT AS FOLLOWS
+        const instructions: Map<string, Map<string,string[]>> = new Map()
+
         for(let i = 2; i < cleanedCode.length; ++i){
             lineTokens = cleanedCode[i].split(this.COMMA).map(token => token.trim())
             //FIRST, check if the tokens match the expected number 3
@@ -83,41 +87,36 @@ export class FSAParser{
             if(i === 2 && lineTokens[0] !== initialState){
                 // TODO: THROW AN ERROR, FIRST STATE IS NOT INITIAL
             }
-        }
-
-
-        
-    }
-
-
-    // THIS cleans the code, removes comments and empty lines from our code, keeping only instructions as String[]
-    private cleanCode(): string[] {
-        if (!this.Code || this.Code.trim() === "") {
-            return [];
-        }
-
-        const lines = this.Code.split("\n");
-        const cleanedCode: string[] = [];
-
-        for (const line of lines) {
-            // Strip comments from the line
-            const instruction = line.split(this.COMMENTS_SEPARATOR)[0].trim();
-
-            // Only keep lines that have actual code content
-            if (instruction.length > 0) {
-                cleanedCode.push(instruction);
+            // we have now our token as follows: [state, read symbol, next state]
+            let stateInnerMap: Map<string, string[]> | undefined = instructions.get(lineTokens[0])
+            if(!stateInnerMap){
+                stateInnerMap = new Map()
             }
-        }
-        return cleanedCode
-    }
+            if(!this.Alphabet.has(lineTokens[1])){
+                // TODO: Symbol not in the alphabet, cannot continue parsing
+                return null
+            }
+            let nextStates: string[] = stateInnerMap.get(lineTokens[1]) || []
 
+            nextStates.push(lineTokens[2])
+            stateInnerMap.set(lineTokens[1],nextStates)
+            instructions.set(lineTokens[0],stateInnerMap)
+
+        }
+
+       return {
+        initial: initialState,
+        finalStates: finalStates,
+        stateTransition: instructions
+       }
+    }
 
 
     // Helper method to check if a token contains any forbidden special character
     private containsForbiddenChar(token: string): boolean {
     return this.SPECIAL_CHARS.some(char => token.includes(char));
     }
-    public getAlphabet(): String[]{ return this.Alphabet }
+    public getAlphabet(): Set<string> { return this.Alphabet }
     public getCode(): String{ return this.Code }
     public getEpsilon():String{ return this.epsilon }
 

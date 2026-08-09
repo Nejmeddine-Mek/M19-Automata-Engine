@@ -38,7 +38,8 @@ export type ThemeType = typeof THEME;
 export default function App() {
   const [showConfigWindow, SetShowConfigWindow] = useState(true)
   const [showIde, setShowIde] = useState(false)
-
+  const manager = new ParsingManager('FSA')
+  manager.test()
   return (
     <div className={`flex flex-col h-screen w-screen overflow-hidden ${THEME.bgApp} text-slate-100 ${THEME.fontSans}`}>
       <Header theme={THEME}/>

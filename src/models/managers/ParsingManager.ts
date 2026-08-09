@@ -8,7 +8,7 @@ export class ParsingManager{
         this.automatonType = automatonType
     }
     public test(){
-        const code = "INITIAL: q0\nFINAL: q1\nq0, a, q0\nq0,b,q1;this here is a final state";
+        const code = "INITIAL: q0\nFINAL: qf\nq0, a, q0\nq0,b,q1\nq1,a,q0\nq1,b,qf;this here is a final state";
         const parser = new FSAParser(['a','b'],code,'_')
         parser.parseInstructions()
     }
