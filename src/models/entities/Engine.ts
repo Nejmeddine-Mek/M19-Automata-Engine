@@ -11,7 +11,9 @@ export interface EngineState{
     headNextPosition: number[], // here is the next position of the head should be +1, 0, or -1 and nothing else
     parentInstances: number[], // this works as a way to track instances and their children/parents 
     // such that element parentInstances[i] is the parent of the ith instance
-
+    stackTops: (string | null)[] | null // this must strictly remain null if the machine type is not a Push Down automaton
+    // thus, the constructor will always be defining it as null, and only when starting to execute, it is initialized to [] in we are dealing with a PDA
+    // in reality, the stack top is never empty, so it has its own particularities that will be handles by a specific unit when working with PDAs
 }
 
 export class Engine{
@@ -22,20 +24,25 @@ export class Engine{
     private activeStates: string[]
     private parentInstances: number[]
     private tapesCurrentValue: string[]
+    private stackTops: (string | null)[] | null
+    
     
     public constructor(){
         this.activeStates = []
         this.headNextPosition = []
         this.parentInstances = []
         this.tapesCurrentValue = []
+        this.stackTops = null
     }
+
 
     public getEngineState(): EngineState{
         return {
             activeStates: this.activeStates,
             parentInstances: this.parentInstances,
             headNextPosition: this.headNextPosition,
-            tapesCurrentValue: this.tapesCurrentValue
+            tapesCurrentValue: this.tapesCurrentValue,
+            stackTops: this.stackTops
 
         }
     }
