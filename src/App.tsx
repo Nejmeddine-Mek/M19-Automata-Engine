@@ -3,7 +3,8 @@ import Config from "./components/Config";
 import Header from "./components/Header";
 import { ParsingManager } from "./models/managers/ParsingManager";
 import ExecSpace from "./components/ExecSpace";
-/*
+import Tape from "./components/Tape";
+
 export const THEME = {
   bgApp: "bg-gray-100",
   bgSidebar: "bg-gray-200/50",
@@ -17,8 +18,8 @@ export const THEME = {
   focusRing: "focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500",
   fontSans: "font-sans",
   fontMono: "font-mono",
-};*/
-
+};
+/*
 export const THEME = {
   bgApp: "bg-zinc-950",
   bgSidebar: "bg-zinc-900/90",
@@ -33,7 +34,7 @@ export const THEME = {
   fontSans: "font-sans",
   fontMono: "font-mono",
 };
-
+*/
 export type ThemeType = typeof THEME;
 
 export default function App() {
@@ -54,10 +55,12 @@ export default function App() {
           </div>
 
           {/* 2. Visualizer Workspace (Expands to fill all remaining vertical space) */}
+          
           <div className={`flex-1 w-full ${THEME.bgPanelInner} border ${THEME.border} rounded-lg p-6 flex items-center justify-center shadow-sm`}>
+          {/*
             <span className={`text-sm ${THEME.fontMono} ${THEME.textMuted}`}>
               No execution state loaded. Enter input above and click Execute.
-            </span>
+            </span>*/}
           </div>
         </section>
 

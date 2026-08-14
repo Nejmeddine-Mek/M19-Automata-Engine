@@ -25,6 +25,17 @@ export default function Config({ theme }: ConfigProps) {
   // TM Specific
   const [blankSymbol, setBlankSymbol] = useState('⊔');
 
+  // UI state for saved feedback
+  const [saved, setSaved] = useState(false);
+
+  // Save configuration handler
+  const handleSave = () => {
+    // TODO: Connect to engine / parent state dispatch
+
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
   const renderTypeSpecificFields = () => {
     switch (selectedType) {
       case 'FSA':
@@ -110,7 +121,6 @@ export default function Config({ theme }: ConfigProps) {
 
   return (
     <div className="flex flex-col gap-4 w-full">
-        
       {/* Automaton Type Selector */}
       <div className="flex flex-col gap-1.5">
         <label className={`text-xs font-semibold uppercase tracking-wider ${theme.textTitle}`}>
@@ -174,6 +184,31 @@ export default function Config({ theme }: ConfigProps) {
 
         {/* Specialized Fields per Automaton */}
         {renderTypeSpecificFields()}
+      </div>
+
+      <hr className={theme.borderSubtle} />
+
+      {/* Save Action Bar */}
+      <div className="flex items-center justify-between pt-1">
+        {saved ? (
+          <span className="text-xs font-mono text-emerald-600 font-medium">
+            ✓ Saved
+          </span>
+        ) : (
+          <span />
+        )}
+
+        <button
+          type="button"
+          onClick={handleSave}
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold ${theme.fontMono} uppercase tracking-wider 
+            bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white rounded-md transition-all shadow-sm ${theme.focusRing}`}
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+          </svg>
+          Save Config
+        </button>
       </div>
     </div>
   );
