@@ -33,7 +33,7 @@ export class Engine{
     
     // This object is not intended to be read outside this class
     private machineDefinition!: FsaDefinition | TMDefinition | PDADefinition | LBADefinition
-    private TargetHandler: () => void;
+    private TargetHandler: (stepsCount: number | null) => void;
     
     public constructor(machineType: string){
         this.activeStates = []
@@ -57,8 +57,8 @@ export class Engine{
                 break
             default:
                 //TODO: throw an error
-                this.TargetHandler = (() => console.log("PROBLEM"))
-                this.TargetHandler()
+                this.TargetHandler = ((stepsCount: number | null) => console.log("PROBLEM"))
+                this.TargetHandler(1)
                 
                 return
 
@@ -78,27 +78,104 @@ export class Engine{
         this.activeStates.push(definition.initial)
     }
 
-    public exec(){
-        this.TargetHandler()
+    public exec(stepsCount: number | null){
+        this.TargetHandler(stepsCount)
     }
-    private FSAExec(){
-        const activeStates: Set<string> = new Set()
-        // we must treat all states of the machine obviously
-        for(let i: number = 0; i < this.activeStates.length ; ++i){
-            // we need to clear any empty transitions all the way down
-            activeStates.add(this.activeStates[i])
-            const currentStateMap = (this.machineDefinition as FsaDefinition).stateTransition.get(this.activeStates[i])
-            //TODO: search and resolve all empty transitions for the current instance, if any non-det, create a new instance, and it will be resolved in its iteration
+    // TODO: work more on this
+    private FSAExec(stepsCount: number | null){
+        const fsa = this.machineDefinition as FsaDefinition
+        const EPSILON = 'ε'; // or whatever symbol your parser uses for empty transitions
 
+        let stepsExecuted = 0;
+        const isUnbounded = stepsCount === null;
+        while (isUnbounded || stepsExecuted < stepsCount!) {
+            if (this.activeStates.length === 0) break
+            // 1. Resolve Epsilon-Closure (Expand all reachable states via ε-transitions)
+            const expandedStates: string[] = []
+            const expandedParents: number[] = []
+            const expandedTapes: string[] = []
+            const expandedPositions: number[] = []
+            for (let i = 0; i < this.activeStates.length; ++i) {
+                // get current active states
+                const startState = this.activeStates[i];
+                const tapeValue = this.tapesCurrentValue[i];
+                const tapePos = this.headNextPosition[i];
+
+                // BFS to find all states reachable via ε-transitions from startState
+                const visited = new Set<string>();
+                const queue: string[] = [startState];
+                visited.add(startState);
+
+                while (queue.length > 0) {
+                    const currState = queue.shift()!
+
+                    // Store this valid state branch in our expanded lists
+                    expandedStates.push(currState)
+                    expandedParents.push(i)
+                    expandedTapes.push(tapeValue)
+                    expandedPositions.push(tapePos)
+
+                    // Look up ε-transitions for currState
+                    const stateTransitions = fsa.stateTransition.get(currState)
+                    const epsilonTargets = stateTransitions?.get(EPSILON)
+
+                    if (epsilonTargets) {
+                        for (const targetState of epsilonTargets) {
+                            if (!visited.has(targetState)) {
+                                visited.add(targetState)
+                                queue.push(targetState)
+                            }
+                        }
+                    }
+                }
+            }
+            // 2. Consume Symbol & Process Transitions
+            const nextActiveStates: string[] = []
+            const nextParents: number[] = []
+            const nextTapes: string[] = []
+            const nextPositions: number[] = []
+
+            for (let i = 0; i < expandedStates.length; ++i) {
+                const state = expandedStates[i]
+                const tape = expandedTapes[i]
+                const pos = expandedPositions[i]
+
+                // Check if tape has reached the end
+                if (pos >= tape.length) continue;
+
+                const inputSymbol = tape[pos];
+                const transitions = fsa.stateTransition.get(state);
+                const targetStates = transitions?.get(inputSymbol);
+
+                if (targetStates && targetStates.length > 0) {
+                    for (const nextState of targetStates) {
+                        nextActiveStates.push(nextState);
+                        nextParents.push(expandedParents[i]);
+                        nextTapes.push(tape);
+                        nextPositions.push(pos + 1); // Advance head
+                    }
+                }
+            }
+
+            // Update active vectors for the next step iteration
+            this.activeStates = nextActiveStates;
+            this.parentInstances = nextParents;
+            this.tapesCurrentValue = nextTapes;
+            this.headNextPosition = nextPositions;
+
+            stepsExecuted++;
         }
     }
-    private PDAExec(){
+
+
+
+    private PDAExec(stepsCount: number | null){
 
     }
-    private LBAExec(){
+    private LBAExec(stepsCount: number | null){
 
     }
-    private TMExec(){
+    private TMExec(stepsCount: number | null){
 
     }
 
