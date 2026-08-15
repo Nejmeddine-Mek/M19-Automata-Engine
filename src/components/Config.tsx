@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { ThemeType } from '../App';
 
 export type AutomatonType = 'TM' | 'LBA' | 'PDA' | 'FSA';
