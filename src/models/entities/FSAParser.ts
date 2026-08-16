@@ -92,9 +92,12 @@ export class FSAParser{
             if(!stateInnerMap){
                 stateInnerMap = new Map()
             }
-            if(!this.Alphabet.has(lineTokens[1])){
-                // TODO: Symbol not in the alphabet, cannot continue parsing
-                return null
+            const symbol = lineTokens[1];
+            const isValidSymbol = this.Alphabet.has(symbol) || symbol === this.epsilon;
+
+            if (!isValidSymbol) {
+                // TODO: Symbol not in alphabet or valid epsilon
+                return null;
             }
             let nextStates: string[] = stateInnerMap.get(lineTokens[1]) || []
 
