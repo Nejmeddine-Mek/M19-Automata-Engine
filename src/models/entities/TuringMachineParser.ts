@@ -22,7 +22,7 @@ export class TuringMachineParser{
             return null
         
         // TO VERIFY
-        let lineTokens: string[] = cleanedCode[0].split(this.DIRECTIVES_SEPARATOR)
+        let lineTokens: string[] = cleanedCode[0].split(this.COMMA)
        
         const finalStates: Set<string> = new Set();
         let initial: string = lineTokens[0]
@@ -33,17 +33,20 @@ export class TuringMachineParser{
             lineTokens = cleanedCode[i].split(this.COMMA)
             if(lineTokens.length !== 4){
                 // TODO: throw an error, incompatible instruction format
+                console.log("not compliant in length")
                 return null
             }
             let stateInnerMap: Map<string, ActionTransition> /*we use any for now */ = instructions.get(lineTokens[0]) || new Map()
             if(!this.alphabet.has(lineTokens[1])){
                 // TODO: throw an error, symbol does not belong to alphabet
+                console.log("letter not in alphabet")
                 return null
             }
             
             let currentAction: ActionTransition = stateInnerMap.get(lineTokens[1]) || {action: [], nextStates: []}
             if(!this.alphabet.has(lineTokens[2]) /* || moveSymbols.has(lineTokens[2]) */){
                 //TODO: unrecognized symbol, error
+                console.log(lineTokens[2] ," not recognised")
                 return null
             }
             // fill the actions object
