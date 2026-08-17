@@ -1,4 +1,4 @@
-import { Engine, type EngineState } from "../models/entities/Engine";
+import { Engine} from "../models/entities/Engine";
 import { FSAParser } from "../models/entities/FSAParser";
 import type { FsaDefinition } from "../models/interfaces/FsaDefinition";
 

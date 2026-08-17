@@ -3,8 +3,7 @@ import Config from "./components/Config";
 import Header from "./components/Header";
 import { ParsingManager } from "./models/managers/ParsingManager";
 import ExecSpace from "./components/ExecSpace";
-import Tape from "./components/Tape";
-
+import IDE from "./components/IDE";
 export const THEME = {
   bgApp: "bg-gray-100",
   bgSidebar: "bg-gray-200/50",
@@ -93,8 +92,12 @@ export default function App() {
 
             {/* Collapsable Content */}
             {showIde && (
-              <div className={`flex-1 ${THEME.bgPanelInner} rounded-lg p-3 text-sm ${THEME.fontMono} ${THEME.textMuted} ${THEME.borderSubtle} border overflow-y-auto`}>
-                // Code editor goes here...
+              <div className={`flex-1 ${THEME.bgPanelInner} rounded-lg p-3 text-sm ${THEME.fontMono} ${THEME.textMuted} ${THEME.borderSubtle} border overflow-hidden flex flex-col h-64`}>
+                <IDE 
+                  code={"dslCode"} 
+                  onChange={() => console.log("x")} 
+                  THEME={THEME} 
+                />
               </div>
             )}
           </div>
