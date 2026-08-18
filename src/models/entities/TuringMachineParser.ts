@@ -21,7 +21,7 @@ export class TuringMachineParser{
         if(cleanedCode.length === 0)
             return null
         
-        // TO VERIFY
+        // WE KEEP THE SIMILAR LOGIC TO THE ORIGINAL TURING MACHINE SIMULATOR
         let lineTokens: string[] = cleanedCode[0].split(this.COMMA)
        
         const finalStates: Set<string> = new Set();
