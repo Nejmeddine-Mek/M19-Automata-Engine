@@ -18,19 +18,22 @@ export interface ThemeConfig {
 
 interface ExecSpaceProps {
   theme: ThemeConfig;
-  onExecute?: (input: string, speed: number, jumpToResult: boolean) => void;
+  onExecute?: (isJumpToResults: boolean, animationDelay: number, inputTape: string) => void;
   isExecuting?: boolean;
+
 }
 
-export function ExecSpace({ theme, onExecute, isExecuting = false }: ExecSpaceProps) {
+export function ExecSpace({ theme, onExecute, isExecuting = false}: ExecSpaceProps) {
   const [inputArg, setInputArg] = useState<string>('');
   const [animSpeed, setAnimSpeed] = useState<number>(500); // Speed in ms
   const [jumpToResults, setJumpToResults] = useState<boolean>(false);
+  
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (onExecute) {
-      onExecute(inputArg, animSpeed, jumpToResults);
+
+      onExecute(jumpToResults, animSpeed, inputArg);
     }
   };
 
@@ -96,6 +99,7 @@ export function ExecSpace({ theme, onExecute, isExecuting = false }: ExecSpacePr
         {/* Execute Action Button */}
         <button
           type="submit"
+
           disabled={isExecuting}
           className={`px-4 py-1.5 text-xs font-semibold ${theme.fontMono} uppercase tracking-wider bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white rounded transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed`}
         >

@@ -1,9 +1,10 @@
-import { useState } from "react";
-import Config from "./components/Config";
-import Header from "./components/Header";
-import { ParsingManager } from "./models/managers/ParsingManager";
-import ExecSpace from "./components/ExecSpace";
-import IDE from "./components/IDE";
+import { useState } from "react"
+import Config from "./components/Config"
+import Header from "./components/Header"
+
+import ExecSpace from "./components/ExecSpace"
+import IDE from "./components/IDE"
+
 export const THEME = {
   bgApp: "bg-gray-100",
   bgSidebar: "bg-gray-200/50",
@@ -37,10 +38,24 @@ export const THEME = {
 export type ThemeType = typeof THEME;
 
 export default function App() {
+  const [code, setCode] = useState<string>('')
   const [showConfigWindow, SetShowConfigWindow] = useState(true)
   const [showIde, setShowIde] = useState(false)
-  const manager = new ParsingManager('FSA')
-  manager.test()
+  const [isExecuting, setIsExecuting] = useState<boolean>(false)
+
+  const handleExecute = (isJumpToResults: boolean, animationDelay: number, inputTape: string) => {
+      console.log("Extracting code from IDE state:", code);
+      // TODO: finish the rest of the work
+      console.log("data for execution and animation management", isJumpToResults, animationDelay, inputTape)
+      setIsExecuting(true)
+      //--- TODO: execution 
+      // ...
+      setTimeout(() => {
+      // Final state updates once animation completes
+        setIsExecuting(false);
+      }, 2500);
+
+    }
   return (
     <div className={`flex flex-col h-screen w-screen overflow-hidden ${THEME.bgApp} text-slate-100 ${THEME.fontSans}`}>
       <Header theme={THEME}/>
@@ -50,7 +65,7 @@ export default function App() {
         <section className={`w-[75%] h-full ${THEME.bgApp} ${THEME.border} border-r p-6 flex flex-col justify-start items-stretch gap-4 overflow-y-auto`}>
           {/* 1. Toolbar pinned at the top */}
           <div className="w-full shrink-0">
-            <ExecSpace theme={THEME}/>
+            <ExecSpace theme={THEME} onExecute={handleExecute} isExecuting={isExecuting}/>
           </div>
 
           {/* 2. Visualizer Workspace (Expands to fill all remaining vertical space) */}
@@ -94,8 +109,8 @@ export default function App() {
             {showIde && (
               <div className={`flex-1 ${THEME.bgPanelInner} rounded-lg p-3 text-sm ${THEME.fontMono} ${THEME.textMuted} ${THEME.borderSubtle} border overflow-hidden flex flex-col h-64`}>
                 <IDE 
-                  code={"dslCode"} 
-                  onChange={() => console.log("x")} 
+                  code={code} 
+                  onChange={setCode} 
                   THEME={THEME} 
                 />
               </div>
