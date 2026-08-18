@@ -4,10 +4,16 @@ import { Engine, type EngineState } from "../entities/Engine";
 export class ExecutionManager{
     public static epsilon = "e"
     private statesStack: EngineState[]
-    private nextStates!: EngineState[] // this here will hold next states when executing previouss
+    private nextStates!: EngineState[] // this here will hold next states when executing previous
+    // these should only be used with machines that write into the tapes ie: LBA, TM, and PDA
+    private tapesStates!: string[]
+    private nextTapeStates!: string[]
+    // for the PDA, we will need to keep the states of stacks, we do that later
     public constructor(){
         this.statesStack = []
         this.nextStates = []
+        this.tapesStates = []
+        this.nextTapeStates = []
     }
 
 
@@ -31,7 +37,8 @@ export class ExecutionManager{
 
     public getStatesStack(){ return this.statesStack }
     public getNextSates(){ return this.nextStates}
-
+    public getTapeStates(){ return this.tapesStates }
+    public getNextTapeStates(){ return this.nextTapeStates }
 
 
 }
