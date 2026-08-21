@@ -5,3 +5,5 @@
   
  ## Features
   - The app features configurable machines, so that you can configure the alphabet you want, the symbol you want to correspond to epsilon, as well as the symbols at the end of the stack in PDAs and tape ends in LBAs
+  - It also utilizes a Domain Specific language for each automaton to write instructions, instead of graphically building the automaton which might take a lot of time and effort.
+  - This approach should also help with thinking more algebraically rather then thinking graphically and visually.
