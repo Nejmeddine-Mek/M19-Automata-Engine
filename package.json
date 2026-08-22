@@ -12,7 +12,8 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "util": "^0.12.5"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",

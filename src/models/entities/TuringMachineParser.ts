@@ -7,7 +7,6 @@ export class TuringMachineParser{
     
     private code: string
     private alphabet: Set<string>
-    
     public constructor(alphabet: string[], code: string){
         this.alphabet = new Set(alphabet)
         this.code = code

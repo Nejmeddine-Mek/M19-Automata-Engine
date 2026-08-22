@@ -4,6 +4,8 @@ import Header from "./components/Header"
 
 import ExecSpace from "./components/ExecSpace"
 import IDE from "./components/IDE"
+import type { FSAConfig, LBAConfig, PDAConfig, TMConfig } from "./models/interfaces/configs"
+import { ParsingManager } from "./models/managers/ParsingManager"
 
 export const THEME = {
   bgApp: "bg-gray-100",
@@ -42,12 +44,26 @@ export default function App() {
   const [showConfigWindow, SetShowConfigWindow] = useState(true)
   const [showIde, setShowIde] = useState(false)
   const [isExecuting, setIsExecuting] = useState<boolean>(false)
-
+  const [machineConfig, setMachineConfig] = useState<FSAConfig | PDAConfig | LBAConfig | TMConfig | null>(null)
+  
   const handleExecute = (isJumpToResults: boolean, animationDelay: number, inputTape: string) => {
+    if(machineConfig === null){
+      // TODO: emit an error
+      return
+    }
+    // this is a primary check, \n\n\n\n\n will be handled at the level of the parser
+    if(code.length === 0){
+      // NO CODE TO PARSE
+      return
+    }
       console.log("Extracting code from IDE state:", code);
       // TODO: finish the rest of the work
       console.log("data for execution and animation management", isJumpToResults, animationDelay, inputTape)
+      console.log("Machine Configs: ", machineConfig)
       setIsExecuting(true)
+      // now we have our code, our config, all set we can proceed to the parsing manager
+      const parsingManager: ParsingManager = new ParsingManager(machineConfig?.machineType!)
+      
       //--- TODO: execution 
       // ...
       setTimeout(() => {
@@ -56,6 +72,8 @@ export default function App() {
       }, 2500);
 
     }
+
+  
   return (
     <div className={`flex flex-col h-screen w-screen overflow-hidden ${THEME.bgApp} text-slate-100 ${THEME.fontSans}`}>
       <Header theme={THEME}/>
@@ -145,7 +163,7 @@ export default function App() {
             {/* Collapsable Content */}
             {showConfigWindow && (
               <div className={`flex-1 ${THEME.bgPanelInner} rounded-lg p-3 text-sm ${THEME.textMuted} ${THEME.borderSubtle} border overflow-y-auto`}>
-                <Config theme={THEME} />
+                <Config theme={THEME} onChangeConfig={setMachineConfig} />
               </div>
             )}
           </div>

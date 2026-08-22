@@ -1,16 +1,46 @@
+
 import { FSAParser } from "../entities/FSAParser";
+import { TuringMachineParser } from "../entities/TuringMachineParser";
+import type { FSAConfig, LBAConfig, PDAConfig, TMConfig } from "../interfaces/configs";
 
 
 export class ParsingManager{
     private automatonType: String;
-    
     public constructor(automatonType: String){
         this.automatonType = automatonType
     }
-    public test(){
-        const code = "INITIAL: q0\nFINAL: qf\nq0, a, q0\nq0,b,q1\nq1,a,q0\nq1,b,qf;this here is a final state";
-        const parser = new FSAParser(['a','b'],code,'_')
-        parser.parseInstructions()
+    public parseCode(machineType: FSAConfig | LBAConfig | PDAConfig | TMConfig, code: string){
+        try{
+            switch(machineType.machineType){
+                case 'FSA':
+                    const fsaConfig = machineType as FSAConfig
+                    const fsaParser = new FSAParser(
+                        fsaConfig.alphabet,
+                        code,
+                        fsaConfig.epsilon)
+
+                    return fsaParser.parseInstructions()
+
+                case 'PDA':
+                case 'LBA':
+                case 'TM':
+                    const tmConfig = machineType as TMConfig
+                    const tmParser = new TuringMachineParser(
+                        [...tmConfig.alphabet,
+                            tmConfig.epsilon,
+                            tmConfig.left,
+                            tmConfig.right,
+                            tmConfig.emptyTape
+                        ],
+                        code
+                    )
+                    return tmParser.parseInstructions()
+                
+            }
+        }catch(err){
+
+        }
     }
+    
     public getAutomatonType(): String { return this.automatonType }
 }

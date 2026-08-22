@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import type { ThemeType } from '../App';
+import type { FSAConfig, LBAConfig, PDAConfig, TMConfig } from '../models/interfaces/configs';
 
 export type AutomatonType = 'TM' | 'LBA' | 'PDA' | 'FSA';
 
 interface ConfigProps {
-  theme: ThemeType;
+  theme: ThemeType; // Replace with your actual theme type
+  onChangeConfig: (config: FSAConfig | PDAConfig | LBAConfig | TMConfig | null) => void
 }
 
-export default function Config({ theme }: ConfigProps) {
+export default function Config({ theme, onChangeConfig }: ConfigProps) {
   const [selectedType, setSelectedType] = useState<AutomatonType>('FSA');
 
   // Shared Engine Config
@@ -24,6 +26,8 @@ export default function Config({ theme }: ConfigProps) {
 
   // TM Specific
   const [blankSymbol, setBlankSymbol] = useState('⊔');
+  const [rightSymbol, setRightSymbol] = useState('R')
+  const [leftSymbol, setLeftSymbol] = useState('L')
 
   // UI state for saved feedback
   const [saved, setSaved] = useState(false);
@@ -31,9 +35,39 @@ export default function Config({ theme }: ConfigProps) {
   // Save configuration handler
   const handleSave = () => {
     // TODO: Connect to engine / parent state dispatch
-
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setSaved(true)
+    const parsedLetters = alphabet.split(',').map(letter => letter.trim())
+    switch(selectedType){
+      case 'FSA':
+        onChangeConfig({
+          machineType : 'FSA',
+          alphabet: parsedLetters,
+          epsilon : epsilonSymbol.trim()
+        }) 
+        break
+      case 'PDA':
+        onChangeConfig(        {
+          machineType: 'PDA'
+        })
+        break
+      case 'LBA':
+        onChangeConfig(        {
+          machineType: 'LBA'
+        })
+        break
+      case 'TM':
+        onChangeConfig({
+          machineType: 'TM',
+          alphabet: parsedLetters,
+          right: rightSymbol.trim(),
+          left: leftSymbol.trim(),
+          epsilon: epsilonSymbol.trim(),
+          emptyTape: blankSymbol.trim()
+        })
+        break
+      default:
+        break
+    }
   };
 
   const renderTypeSpecificFields = () => {
@@ -98,21 +132,55 @@ export default function Config({ theme }: ConfigProps) {
             </div>
           </div>
         );
+        case 'TM':
+          return (
+            <div className="flex flex-col gap-3 w-full">
+              {/* Top Row: Blank Symbol */}
+              <div className="flex flex-col gap-1">
+                <label className={`text-[11px] font-medium ${theme.textTitle}`}>
+                  Blank Symbol (B)
+                </label>
+                <input
+                  type="text"
+                  maxLength={1}
+                  value={blankSymbol}
+                  onChange={(e) => setBlankSymbol(e.target.value)}
+                  className={`px-2.5 py-1.5 ${theme.bgInput} ${theme.border} ${theme.textInput} border rounded-md text-xs font-mono outline-none ${theme.focusRing}`}
+                />
+              </div>
 
-      case 'TM':
-        return (
-          <div className="flex flex-col gap-1">
-            <label className={`text-[11px] font-medium ${theme.textTitle}`}>
-              Blank Symbol (B)
-            </label>
-            <input
-              type="text"
-              value={blankSymbol}
-              onChange={(e) => setBlankSymbol(e.target.value)}
-              className={`px-2.5 py-1.5 ${theme.bgInput} ${theme.border} ${theme.textInput} border rounded-md text-xs font-mono outline-none ${theme.focusRing}`}
-            />
-          </div>
-        );
+              {/* Bottom Row: Right and Left Movement Symbols */}
+              <div className="flex flex-row items-center gap-3 w-full">
+                <div className="flex flex-col gap-1 flex-1 min-w-0">
+                  <label className={`text-[11px] font-medium ${theme.textTitle}`}>
+                    Right Symbol (R)
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={1}
+                    value={rightSymbol}
+                    onChange={(e) => setRightSymbol(e.target.value)}
+                    placeholder="R"
+                    className={`px-2.5 py-1.5 ${theme.bgInput} ${theme.border} ${theme.textInput} border rounded-md text-xs font-mono outline-none ${theme.focusRing}`}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1 flex-1 min-w-0">
+                  <label className={`text-[11px] font-medium ${theme.textTitle}`}>
+                    Left Symbol (L)
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={1}
+                    value={leftSymbol}
+                    onChange={(e) => setLeftSymbol(e.target.value)}
+                    placeholder="L"
+                    className={`px-2.5 py-1.5 ${theme.bgInput} ${theme.border} ${theme.textInput} border rounded-md text-xs font-mono outline-none ${theme.focusRing}`}
+                  />
+                </div>
+              </div>
+            </div>
+          );
 
       default:
         return null;
