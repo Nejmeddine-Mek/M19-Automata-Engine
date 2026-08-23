@@ -22,7 +22,9 @@ export class ParsingManager{
                     return fsaParser.parseInstructions()
 
                 case 'PDA':
+                    return null
                 case 'LBA':
+                    return null
                 case 'TM':
                     const tmConfig = machineType as TMConfig
                     const tmParser = new TuringMachineParser(
