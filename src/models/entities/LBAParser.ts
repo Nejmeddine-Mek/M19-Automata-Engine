@@ -1,3 +1,4 @@
+import type { ActionTransition } from "../interfaces/LBADefinition"
 import CleaningService from "../services/CleaningService"
 //-----------------------------------------------------------------
 //
@@ -61,14 +62,39 @@ private epsilon: string
     
     // PROCESS INSTRUCTIONS ---------------
     // HERE WE NEED TO SET THE DEFINITIONS AND TYPES BEFORE WE PROCEED
-    const instructions: Map<string, Map<string,any>> = new Map()
+    const instructions= new Map()
     for(let i = 2; i < cleanedCode.length; ++i){
         // TODO: write parsing code here
+        lineTokens = cleanedCode[i].split(this.COMMA)
+        if(lineTokens.length !== 4){
+            // TODO: inst format not respected err
+            return null
+        }
+        let stateInnerMap: Map<string, ActionTransition>  = instructions.get(lineTokens[0]) || new Map<string, ActionTransition>()
+        if(!this.alphabet.has(lineTokens[1]) && lineTokens[1] !== this.epsilon){
+            // TODO: throw an error, symbol does not belong to alphabet
+            console.log("letter not in alphabet")
+            return null
+        }
+        let currentAction: ActionTransition = stateInnerMap.get(lineTokens[1]) || {action: [], nextStates: []}
+        if(!this.alphabet.has(lineTokens[2]) /* || moveSymbols.has(lineTokens[2]) */){
+            //TODO: unrecognized symbol, error
+            console.log(lineTokens[2] ," not recognised")
+            return null
+        }
+        // fill the actions object
+        currentAction.action.push(lineTokens[2])
+        currentAction.nextStates.push(lineTokens[3])
+        // fill the state map
+        stateInnerMap.set(lineTokens[1],currentAction)
+        // add the states map to the instructions map
+        instructions.set(lineTokens[0],stateInnerMap)
+            
     }
  }
 
     private containsForbiddenChar(token: string): boolean {
     
-        return this.SPECIAL_CHARS.some(char => token.includes(char));
+        return this.SPECIAL_CHARS.some(char => token.includes(char))
     }
 }
