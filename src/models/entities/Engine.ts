@@ -154,6 +154,83 @@ export class Engine{
 
     }
     private TMExec(){
+        const tm = this.machineDefinition as TMDefinition
+        const newNextHeadPosition: number[] = [];
+        const newActiveStates: string[] = [];
+        const newParentsIndices: number[] = [];
+        const newTapesCurrentValue: string[] = []; // Sync tape values for new instances
+        
+        for(let i = 0; i < this.activeStates.length ; ++i){
+            
+            const visitedStates: Set<string> = new Set()
+            const resolvedActiveStates: Set<string> = new Set()
+            const statesQueue: string[] = [this.activeStates[i]]
+
+            // 1- resolve every epsilon closures
+            while(statesQueue.length > 0){
+                const currentState = statesQueue.shift()!
+                if(visitedStates.has(currentState))
+                    continue
+                
+                visitedStates.add(currentState);
+                resolvedActiveStates.add(currentState);
+
+                const stateInnerMap = tm.stateTransitions.get(currentState)
+                const epsilonClosure = stateInnerMap?.get(ExecutionManager.epsilon)
+
+                if (epsilonClosure && epsilonClosure.nextStates.length > 0) {
+                    // this here should not work this way, but rather we shall spawn a new tape for each state, and do the action written on tape
+                    for (const targetState of epsilonClosure.nextStates) {
+                        if (!visitedStates.has(targetState)) {
+                            statesQueue.push(targetState);
+                        }
+                    }
+                }
+            }
+        }
+        // consume current symbol and spawn next state
+        for (let i = 0; i < this.activeStates.length; ++i) {
+            const currentState = this.activeStates[i];
+            const currentSymbol = this.tapesCurrentValue[i];
+
+            // 1. Fetch transition map for the active state
+            const innerMap = tm.stateTransitions.get(currentState);
+            if (!innerMap) {
+                continue; // Halts only this specific branch, lets others continue
+            }
+
+            // 2. Fetch actions for the current tape symbol
+            const nextActions = innerMap.get(currentSymbol);
+            if (!nextActions) {
+                continue; // Non-accepting dead end for this branch
+            }
+
+            // 3. Process each spawned non-deterministic branch
+            for (let j = 0; j < nextActions.action.length; ++j) {
+                const action = nextActions.action[j];
+                newActiveStates.push(nextActions.nextStates[j]);
+
+                // Keep vectors perfectly synchronized in length across all branches
+                if (action === tm.rightSymbol) {
+                    newNextHeadPosition.push(1);
+                    newTapesCurrentValue.push(currentSymbol); // Symbol stays identical
+                } else if (action === tm.leftSymbol) {       // Fixed: using 'j' instead of 'i'
+                    newNextHeadPosition.push(-1);
+                    newTapesCurrentValue.push(currentSymbol); // Symbol stays identical
+                } else {
+                    newNextHeadPosition.push(0);              // Head stays put
+                    newTapesCurrentValue.push(action);        // Symbol overwritten
+                }
+
+                // Lineage tracking: branch 0 retains the current parent ID; extra branches map back to branch 'i'
+                newParentsIndices.push(j === 0 ? this.parentInstances[i] : i);
+            }
+        }
+        // 3. Atomically update vectors for the next execution step
+        this.activeStates = newActiveStates;
+        this.headNextPosition = newNextHeadPosition;
+        this.parentInstances = newParentsIndices;
+        this.tapesCurrentValue = newTapesCurrentValue;
 
     }
 

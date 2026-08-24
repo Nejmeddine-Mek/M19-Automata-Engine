@@ -6,6 +6,7 @@ export class TuringMachineParser{
     private readonly COMMA = ","
     
     private code: string
+    
     private alphabet: Set<string>
     public constructor(alphabet: string[], code: string){
         this.alphabet = new Set(alphabet)
@@ -62,6 +63,8 @@ export class TuringMachineParser{
         return {
             initial: initial,
             final: finalStates,
+            rightSymbol: 'R',
+            leftSymbol: 'L',
             stateTransitions: instructions
         }
     }
