@@ -160,39 +160,12 @@ export class Engine{
         const newParentsIndices: number[] = [];
         const newTapesCurrentValue: string[] = []; // Sync tape values for new instances
         
-        for(let i = 0; i < this.activeStates.length ; ++i){
-            
-            const visitedStates: Set<string> = new Set()
-            const resolvedActiveStates: Set<string> = new Set()
-            const statesQueue: string[] = [this.activeStates[i]]
 
-            // 1- resolve every epsilon closures
-            while(statesQueue.length > 0){
-                const currentState = statesQueue.shift()!
-                if(visitedStates.has(currentState))
-                    continue
-                
-                visitedStates.add(currentState);
-                resolvedActiveStates.add(currentState);
-
-                const stateInnerMap = tm.stateTransitions.get(currentState)
-                const epsilonClosure = stateInnerMap?.get(ExecutionManager.epsilon)
-
-                if (epsilonClosure && epsilonClosure.nextStates.length > 0) {
-                    // this here should not work this way, but rather we shall spawn a new tape for each state, and do the action written on tape
-                    for (const targetState of epsilonClosure.nextStates) {
-                        if (!visitedStates.has(targetState)) {
-                            statesQueue.push(targetState);
-                        }
-                    }
-                }
-            }
-        }
         // consume current symbol and spawn next state
         for (let i = 0; i < this.activeStates.length; ++i) {
             const currentState = this.activeStates[i];
             const currentSymbol = this.tapesCurrentValue[i];
-
+            
             // 1. Fetch transition map for the active state
             const innerMap = tm.stateTransitions.get(currentState);
             if (!innerMap) {
