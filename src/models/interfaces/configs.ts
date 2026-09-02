@@ -9,7 +9,6 @@ export interface TMConfig{
     alphabet: string[],
     right: string,
     left: string,
-    epsilon: string,
     emptyTape: string
 }
 export interface LBAConfig{

@@ -6,6 +6,9 @@ import ExecSpace from "./components/ExecSpace"
 import IDE from "./components/IDE"
 import type { FSAConfig, LBAConfig, PDAConfig, TMConfig } from "./models/interfaces/configs"
 import { ParsingManager } from "./models/managers/ParsingManager"
+import { ExecutionManager } from "./models/managers/ExecutionMoanager"
+import { UIManager } from "./models/managers/UIManager"
+import { syncExecution } from "./models/services/syncExecution"
 
 export const THEME = {
   bgApp: "bg-gray-100",
@@ -45,7 +48,7 @@ export default function App() {
   const [showIde, setShowIde] = useState(false)
   const [isExecuting, setIsExecuting] = useState<boolean>(false)
   const [machineConfig, setMachineConfig] = useState<FSAConfig | PDAConfig | LBAConfig | TMConfig | null>(null)
-  
+  const [activeTapes, setActiveTapes] = useState()
   const handleExecute = (isJumpToResults: boolean, animationDelay: number, inputTape: string) => {
     if(machineConfig === null){
       // TODO: emit an error
@@ -63,13 +66,14 @@ export default function App() {
       setIsExecuting(true)
       // now we have our code, our config, all set we can proceed to the parsing manager
       const parsingManager: ParsingManager = new ParsingManager(machineConfig?.machineType!)
+      const definition = parsingManager.parseCode(machineConfig, code)
+      // up until here, we have our definitions object well set, next, we need to create the UI manager and the execution manager
+      const executionManager = new ExecutionManager(inputTape, definition)
       
+      const uiManager = new UIManager(setActiveTapes)
       //--- TODO: execution 
       // ...
-      setTimeout(() => {
-      // Final state updates once animation completes
-        setIsExecuting(false);
-      }, 2500);
+      syncExecution(inputTape, executionManager, uiManager, activeTapes)
 
     }
 
@@ -83,16 +87,7 @@ export default function App() {
         <section className={`w-[75%] h-full ${THEME.bgApp} ${THEME.border} border-r p-6 flex flex-col justify-start items-stretch gap-4 overflow-y-auto`}>
           {/* 1. Toolbar pinned at the top */}
           <div className="w-full shrink-0">
-            <ExecSpace theme={THEME} onExecute={handleExecute} isExecuting={isExecuting}/>
-          </div>
-
-          {/* 2. Visualizer Workspace (Expands to fill all remaining vertical space) */}
-          
-          <div className={`flex-1 w-full ${THEME.bgPanelInner} border ${THEME.border} rounded-lg p-6 flex items-center justify-center shadow-sm`}>
-          {/*
-            <span className={`text-sm ${THEME.fontMono} ${THEME.textMuted}`}>
-              No execution state loaded. Enter input above and click Execute.
-            </span>*/}
+            <ExecSpace theme={THEME} onExecute={handleExecute} isExecuting={isExecuting} activeTapes={activeTapes}/>
           </div>
         </section>
 

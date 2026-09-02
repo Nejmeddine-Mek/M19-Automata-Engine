@@ -1,6 +1,8 @@
 
 import React, { useState } from 'react';
-
+import type { ActiveTape } from '../models/interfaces/activeTapeConfigs';
+import Tape from './Tape';
+import Stack from './Stack';
 export interface ThemeConfig {
   bgApp: string;
   bgSidebar: string;
@@ -20,10 +22,11 @@ interface ExecSpaceProps {
   theme: ThemeConfig;
   onExecute?: (isJumpToResults: boolean, animationDelay: number, inputTape: string) => void;
   isExecuting?: boolean;
+  activeTapes: any
 
 }
 
-export function ExecSpace({ theme, onExecute, isExecuting = false}: ExecSpaceProps) {
+export function ExecSpace({ theme, onExecute, isExecuting = false, activeTapes}: ExecSpaceProps) {
   const [inputArg, setInputArg] = useState<string>('');
   const [animSpeed, setAnimSpeed] = useState<number>(500); // Speed in ms
   const [jumpToResults, setJumpToResults] = useState<boolean>(false);
@@ -119,6 +122,35 @@ export function ExecSpace({ theme, onExecute, isExecuting = false}: ExecSpacePro
         Halt
         </button>
       </form>
+      {/* 2. Visualizer Workspace (Expands to fill all remaining vertical space) */}
+      <div className={`flex-1 w-full ${theme.bgPanelInner} border ${theme.border} rounded-lg p-6 flex items-center justify-center shadow-sm`}>
+        {activeTapes && activeTapes.length > 0 ? (
+          <div className="flex flex-col gap-4 w-full h-full justify-start">
+            {activeTapes.map((tape: ActiveTape, index: number) => (
+              <div key={index} className="flex items-center gap-4 w-full">
+                {/* Tape Component */}
+                <div className="flex-1">
+                  <Tape theme={theme} index={index} parentIndex={tape.parentIndex} tapeData={tape.tapeValue} headPosition={tape.currentHeadPosition}/>
+                </div>
+
+                {/* Stack (renders only if tape.stack !== null) */}
+                {tape.stack !== null && (
+                  <div className={`flex flex-col items-center p-3 min-w-[120px] ${theme.bgPanelInner} border ${theme.border} rounded-lg`}>
+                    <span className={`text-[10px] font-bold ${theme.fontMono} uppercase ${theme.textMuted} mb-2`}>
+                      Stack
+                    </span>
+                    <Stack />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <span className={`text-sm ${theme.fontMono} ${theme.textMuted}`}>
+            No execution state loaded. Enter input above and click Execute.
+          </span>
+        )}
+      </div>
     </div>
   );
 }

@@ -14,7 +14,7 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
 
   // Shared Engine Config
   const [alphabet, setAlphabet] = useState('a, b, c');
-  const [epsilonSymbol, setEpsilonSymbol] = useState('ε');
+  const [epsilonSymbol, setEpsilonSymbol] = useState('e');
 
   // PDA Specific
   const [stackInitialSymbol, setStackInitialSymbol] = useState('Z0');
@@ -61,7 +61,6 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
           alphabet: parsedLetters,
           right: rightSymbol.trim(),
           left: leftSymbol.trim(),
-          epsilon: epsilonSymbol.trim(),
           emptyTape: blankSymbol.trim()
         })
         break
@@ -73,7 +72,21 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
   const renderTypeSpecificFields = () => {
     switch (selectedType) {
       case 'FSA':
-        return null; // FSA only needs basic Alphabet & Epsilon
+        return (
+          <>
+            {/* Epsilon Notation */}
+            <div className="flex flex-col gap-1">
+              <label className={`text-[11px] font-medium ${theme.textTitle}`}>
+                Epsilon Symbol (ε)
+              </label>
+              <input
+                type="text"
+                value={epsilonSymbol}
+                onChange={(e) => setEpsilonSymbol(e.target.value)}
+                className={`px-2.5 py-1.5 ${theme.bgInput} ${theme.border} ${theme.textInput} border rounded-md text-xs font-mono outline-none ${theme.focusRing}`}
+              />
+            </div>
+          </>)
 
       case 'PDA':
         return (
@@ -233,19 +246,6 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
             value={alphabet}
             onChange={(e) => setAlphabet(e.target.value)}
             placeholder="e.g. a, b, c"
-            className={`px-2.5 py-1.5 ${theme.bgInput} ${theme.border} ${theme.textInput} border rounded-md text-xs font-mono outline-none ${theme.focusRing}`}
-          />
-        </div>
-
-        {/* Epsilon Notation */}
-        <div className="flex flex-col gap-1">
-          <label className={`text-[11px] font-medium ${theme.textTitle}`}>
-            Epsilon Symbol (ε / λ)
-          </label>
-          <input
-            type="text"
-            value={epsilonSymbol}
-            onChange={(e) => setEpsilonSymbol(e.target.value)}
             className={`px-2.5 py-1.5 ${theme.bgInput} ${theme.border} ${theme.textInput} border rounded-md text-xs font-mono outline-none ${theme.focusRing}`}
           />
         </div>

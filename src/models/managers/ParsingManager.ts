@@ -29,7 +29,6 @@ export class ParsingManager{
                     const tmConfig = machineType as TMConfig
                     const tmParser = new TuringMachineParser(
                         [...tmConfig.alphabet,
-                            tmConfig.epsilon,
                             tmConfig.left,
                             tmConfig.right,
                             tmConfig.emptyTape
