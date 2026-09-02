@@ -1,4 +1,6 @@
+import { useEffect, useState} from 'react';
 import type { ThemeType } from '../App';
+import type { TapeStepChange } from '../models/interfaces/activeTapeConfigs';
 
 interface TapeProps {
   theme: ThemeType;
@@ -6,6 +8,7 @@ interface TapeProps {
   parentIndex?: number;
   tapeData: string[];
   headPosition: number;
+  tapeStepChange: TapeStepChange;
 }
 
 function getThreadColor(index: number, parentIndex?: number): { border: string; bg: string; text: string } {
@@ -28,10 +31,10 @@ export function Tape({
   index,
   parentIndex,
   tapeData,
-  headPosition,
+  headPosition
 }: TapeProps) {
   const accent = getThreadColor(index, parentIndex);
-
+  
   return (
     <div className={`w-full flex flex-col p-3 ${theme.bgPanelInner} border ${theme.border} rounded-lg shadow-sm ${theme.fontSans}`}>
       {/* Thread Metadata Header */}

@@ -3,12 +3,14 @@ export interface ActiveTape{
     tapeValue: string[],
     currentHeadPosition: number,
     stack: string[] | null
-    stepChange?: TapeStepChange | null;
 }
 
 export interface TapeStepChange {
-  action: 'MOVE' | 'WRITE' | 'NOOP';
-  direction?: 'LEFT' | 'RIGHT' | 'HOLD';
-  writtenSymbol?: string;
-  previousHeadPosition?: number;
+  animationSpeed: number
+  action: 'MOVE' | 'WRITE' | 'NOOP'
+  direction?: 'LEFT' | 'RIGHT' | 'HOLD'
+  writtenSymbol?: string
+  previousHeadPosition?: number
+  stackAction?: 'PUSH' | 'POP'
+  stackValue?: string 
 }

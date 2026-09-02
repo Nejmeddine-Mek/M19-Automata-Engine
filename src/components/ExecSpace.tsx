@@ -130,7 +130,7 @@ export function ExecSpace({ theme, onExecute, isExecuting = false, activeTapes}:
               <div key={index} className="flex items-center gap-4 w-full">
                 {/* Tape Component */}
                 <div className="flex-1">
-                  <Tape theme={theme} index={index} parentIndex={tape.parentIndex} tapeData={tape.tapeValue} headPosition={tape.currentHeadPosition}/>
+                  <Tape theme={theme} index={index} parentIndex={tape.parentIndex} tapeData={tape.tapeValue} headPosition={tape.currentHeadPosition} />
                 </div>
 
                 {/* Stack (renders only if tape.stack !== null) */}
