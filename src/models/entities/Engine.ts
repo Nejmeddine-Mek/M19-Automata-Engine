@@ -3,7 +3,7 @@ import type { FsaDefinition } from "../interfaces/FsaDefinition"
 import type { LBADefinition } from "../interfaces/LBADefinition"
 import type { PDADefinition } from "../interfaces/PDADefinition"
 import type { TMDefinition } from "../interfaces/TMDefinition"
-import { ExecutionManager } from "../managers/ExecutionMoanager"
+import { ExecutionManager } from "../managers/ExecutionManager"
 
 export interface EngineState{
     // NOTE: we might want to change this into an array to keep indexes clear
@@ -108,7 +108,7 @@ export class Engine{
                 resolvedActiveStates.add(currentState);
 
                 const stateInnerMap = fsa.stateTransition.get(currentState);
-                const epsilonClosure = stateInnerMap?.get(ExecutionManager.epsilon);
+                const epsilonClosure = stateInnerMap?.get(fsa.epsilon);
 
                 if (epsilonClosure && epsilonClosure.length > 0) {
                     for (const targetState of epsilonClosure) {
@@ -122,12 +122,28 @@ export class Engine{
             // 2. Consume Symbol & Spawn Next Instances
             const currentSymbol = this.tapesCurrentValue[i];
             const nextPos = this.headNextPosition[i] + 1;
-
-            for (const state of resolvedActiveStates) {
+            const resolvedActiveStatesList = Array.from(resolvedActiveStates)
+            for(let j = 0; j < resolvedActiveStatesList.length; ++j){
+                const nextStates = fsa.stateTransition.get(resolvedActiveStatesList[j])?.get(currentSymbol)
+                if(nextStates){
+                    for(let k = 0; k < nextStates.length; ++k){
+                        if( k === 0 && j === 0){
+                            newParentsIndices.push(this.parentInstances[i])
+                        } else {
+                            newParentsIndices.push(i);
+                        }
+                        newActiveStates.push(nextStates[k]);
+                        newNextHeadPosition.push(nextPos);
+                        newTapesCurrentValue.push(currentSymbol);
+                    }
+                }
+            }
+            /*for (const state of resolvedActiveStates) {
                 const nextStates = fsa.stateTransition.get(state)?.get(currentSymbol);
 
                 if (nextStates) {
                     // Safely iterate without mutating definition arrays or pushing to this.activeStates
+
                     for (const nextState of nextStates) {
                         newActiveStates.push(nextState);
                         newParentsIndices.push(i);
@@ -135,7 +151,7 @@ export class Engine{
                         newTapesCurrentValue.push(currentSymbol); // Inherit tape state
                     }
                 }
-            }
+            }*/
         }
 
         // 3. Atomically update vectors for the next execution step

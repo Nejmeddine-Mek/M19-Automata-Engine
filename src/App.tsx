@@ -1,14 +1,16 @@
-import { useState } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import Config from "./components/Config"
 import Header from "./components/Header"
+
 
 import ExecSpace from "./components/ExecSpace"
 import IDE from "./components/IDE"
 import type { FSAConfig, LBAConfig, PDAConfig, TMConfig } from "./models/interfaces/configs"
 import { ParsingManager } from "./models/managers/ParsingManager"
-import { ExecutionManager } from "./models/managers/ExecutionMoanager"
+import { ExecutionManager } from "./models/managers/ExecutionManager"
 import { UIManager } from "./models/managers/UIManager"
-import { syncExecution } from "./models/services/syncExecution"
+import type { TapeHandle, } from "./models/interfaces/TapeHandle"
+import type { ActiveTape, TapeStepChange } from "./models/interfaces/activeTapeConfigs"
 
 export const THEME = {
   bgApp: "bg-gray-100",
@@ -43,12 +45,30 @@ export const THEME = {
 export type ThemeType = typeof THEME;
 
 export default function App() {
-  const [code, setCode] = useState<string>('')
-  const [showConfigWindow, SetShowConfigWindow] = useState(true)
-  const [showIde, setShowIde] = useState(false)
-  const [isExecuting, setIsExecuting] = useState<boolean>(false)
-  const [machineConfig, setMachineConfig] = useState<FSAConfig | PDAConfig | LBAConfig | TMConfig | null>(null)
-  const [activeTapes, setActiveTapes] = useState()
+  const [code, setCode] = useState<string>('');
+  const [showConfigWindow, SetShowConfigWindow] = useState(true);
+  const [showIde, setShowIde] = useState(false);
+  const [isExecuting, setIsExecuting] = useState<boolean>(false);
+
+  const [machineConfig, setMachineConfig] = useState<FSAConfig | PDAConfig | LBAConfig | TMConfig | null>(null);
+  const [executionManager, setExecutionManager] = useState<ExecutionManager | null>(null);
+  const [activeTapes, setActiveTapes] = useState<Record<string, TapeHandle>>({});
+
+  const uiManagerRef = useRef<UIManager | null>(null);
+  if (uiManagerRef.current === null) {
+    uiManagerRef.current = new UIManager(setActiveTapes, 0);
+  }
+
+  // Registration callbacks
+  const handleRegisterTape = useCallback((id: string, handle: TapeHandle) => {
+    console.log("Registering tape:", id);
+    uiManagerRef.current!.registerTapeHandle(id, handle);
+  }, []);
+
+  const handleUnregisterTape = useCallback((id: string) => {
+    uiManagerRef.current!.unregisterTapeHandle(id);
+  }, []);
+
   const handleExecute = (isJumpToResults: boolean, animationDelay: number, inputTape: string) => {
     if(machineConfig === null){
       // TODO: emit an error
@@ -68,16 +88,52 @@ export default function App() {
       const parsingManager: ParsingManager = new ParsingManager(machineConfig?.machineType!)
       const definition = parsingManager.parseCode(machineConfig, code)
       // up until here, we have our definitions object well set, next, we need to create the UI manager and the execution manager
-      const executionManager = new ExecutionManager(inputTape, definition)
-      
-      const uiManager = new UIManager(setActiveTapes)
+      const execMgr = new ExecutionManager(machineConfig.machineType, inputTape, definition);
+      setExecutionManager(execMgr)
+      uiManagerRef.current!.setAnimationSpeed(animationDelay)
       //--- TODO: execution 
       // ...
-      syncExecution(inputTape, executionManager, uiManager, activeTapes)
+      {
+        console.log("synchronizing execution here")
+        // this will be governed by the type of the machine and not randomly like this, meaning it requires more code
+        const activeTapeInstances: ActiveTape[] = []
+        const tapesStepChange: TapeStepChange[] = []
+        activeTapeInstances.push({
+            tapeValue: inputTape.split(''),
+            parentIndex: -1,
+            currentHeadPosition: 0,
+            stack: null,
+            id: execMgr.assignId(),
+            index: 0
+        })
+        tapesStepChange.push({
+            animationSpeed: 250,
+            action: 'NOOP',
+            direction: 'HOLD',
+            stackAction: undefined,
+            stackValue: undefined
+        })
+        uiManagerRef.current!.renderInitialTape(activeTapeInstances[0])
+        execMgr.setInitialTapeStates(activeTapeInstances)
+        
+      }
 
     }
+  useEffect(() => {
+    if (executionManager && Object.keys(activeTapes).length > 0) {
+      console.log("Tapes registered, waiting for animationDelay…");
 
-  
+      const timer = setTimeout(() => {
+        console.log("Starting execution after delay");
+        executionManager.run(true);
+        const newState = executionManager.getCurrentExecutionState();
+        uiManagerRef.current!.updateTapes(newState);
+      }, uiManagerRef.current!.getAnimationSpeed()); // or pass animationDelay directly
+
+      return () => clearTimeout(timer); // cleanup if component unmounts
+    }
+  }, [executionManager, activeTapes]);
+    
   return (
     <div className={`flex flex-col h-screen w-screen overflow-hidden ${THEME.bgApp} text-slate-100 ${THEME.fontSans}`}>
       <Header theme={THEME}/>
@@ -87,7 +143,7 @@ export default function App() {
         <section className={`w-[75%] h-full ${THEME.bgApp} ${THEME.border} border-r p-6 flex flex-col justify-start items-stretch gap-4 overflow-y-auto`}>
           {/* 1. Toolbar pinned at the top */}
           <div className="w-full shrink-0">
-            <ExecSpace theme={THEME} onExecute={handleExecute} isExecuting={isExecuting} activeTapes={activeTapes}/>
+            <ExecSpace theme={THEME} onExecute={handleExecute} isExecuting={isExecuting} activeTapes={activeTapes} onRegisterTape={handleRegisterTape} onUnregisterTape={handleUnregisterTape}/>
           </div>
         </section>
 

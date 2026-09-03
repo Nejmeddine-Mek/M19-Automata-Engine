@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import type { ActiveTape } from '../models/interfaces/activeTapeConfigs';
 import Tape from './Tape';
 import Stack from './Stack';
+
 export interface ThemeConfig {
   bgApp: string;
   bgSidebar: string;
@@ -23,10 +24,11 @@ interface ExecSpaceProps {
   onExecute?: (isJumpToResults: boolean, animationDelay: number, inputTape: string) => void;
   isExecuting?: boolean;
   activeTapes: any
-
+  onRegisterTape: any
+  onUnregisterTape: any
 }
 
-export function ExecSpace({ theme, onExecute, isExecuting = false, activeTapes}: ExecSpaceProps) {
+export function ExecSpace({ theme, onExecute, isExecuting = false, activeTapes, onRegisterTape, onUnregisterTape}: ExecSpaceProps) {
   const [inputArg, setInputArg] = useState<string>('');
   const [animSpeed, setAnimSpeed] = useState<number>(500); // Speed in ms
   const [jumpToResults, setJumpToResults] = useState<boolean>(false);
@@ -130,9 +132,8 @@ export function ExecSpace({ theme, onExecute, isExecuting = false, activeTapes}:
               <div key={index} className="flex items-center gap-4 w-full">
                 {/* Tape Component */}
                 <div className="flex-1">
-                  <Tape theme={theme} index={index} parentIndex={tape.parentIndex} tapeData={tape.tapeValue} headPosition={tape.currentHeadPosition} />
+                  <Tape id={tape.id} theme={theme} index={tape.index} parentIndex={tape.parentIndex} initialTapeData={tape.tapeValue} initialHeadPosition={tape.currentHeadPosition} onRegisterTape={onRegisterTape} onUnregisterTape={onUnregisterTape} animationSpeed={animSpeed}/>
                 </div>
-
                 {/* Stack (renders only if tape.stack !== null) */}
                 {tape.stack !== null && (
                   <div className={`flex flex-col items-center p-3 min-w-[120px] ${theme.bgPanelInner} border ${theme.border} rounded-lg`}>

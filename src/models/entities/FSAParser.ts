@@ -110,7 +110,8 @@ export class FSAParser{
        return {
         initial: initialState,
         finalStates: finalStates,
-        stateTransition: instructions
+        stateTransition: instructions,
+        epsilon: this.epsilon
        }
     }
 
