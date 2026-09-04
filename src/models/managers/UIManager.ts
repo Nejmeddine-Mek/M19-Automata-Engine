@@ -5,6 +5,7 @@ export class UIManager{
     private setActiveTapes: any
     private animationSpeed: number
     private tapeHandles: Map<string, TapeHandle>
+    
     public constructor(setActiveTapes: any, animationSpeed: number){
         this.setActiveTapes = setActiveTapes
         this.animationSpeed = animationSpeed
@@ -13,6 +14,7 @@ export class UIManager{
 
     public updateTapes(newStates: any){
         for(let i = 0; i  < newStates.activeStates.length; ++i){
+            console.log("new states: ", newStates)
             console.log(newStates.ids[i], this.tapeHandles)
             const handler = this.tapeHandles.get(newStates.ids[i])
             console.log("handler: ", handler)
@@ -22,6 +24,7 @@ export class UIManager{
             } else if(newStates.headNextPosition[i] === -1){
                 handler?.moveHead('LEFT')
             }
+            
         }
     }
 

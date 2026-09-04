@@ -1,16 +1,26 @@
 import type { ActionTransition, TMDefinition } from "../interfaces/TMDefinition"
 import CleaningService from "../services/CleaningService"
+import { containsForbiddenChar } from "../services/ForbiddenCharactersCheck"
 
 export class TuringMachineParser{
     private readonly DIRECTIVES_SEPARATOR = ":"
     private readonly COMMA = ","
     
     private code: string
-    
+    private rightSymbol: string
+    private leftSymbol: string
     private alphabet: Set<string>
-    public constructor(alphabet: string[], code: string){
-        this.alphabet = new Set(alphabet)
+    /*
+    **
+    NOTE: ONE MUST PASS ONLY ALPHABET IN THE CTOR, THE CTOR ADDS RIGHT SYMBOL AND LEFT SYMBOL TO THE ALPHABET BY ITSELF
+        - IT ISN'T A MAJOR ISSUE, AS THE SET REMOVES DUPLICATES ANYWAY
+    **
+    */
+    public constructor(alphabet: string[], code: string, rightSymbol: string, leftSymbol: string){
+        this.alphabet = new Set([...alphabet, rightSymbol, leftSymbol])
         this.code = code
+        this.rightSymbol = rightSymbol
+        this.leftSymbol = leftSymbol
     }
 
     public parseInstructions(): TMDefinition | null {
@@ -21,15 +31,47 @@ export class TuringMachineParser{
         if(cleanedCode.length === 0)
             return null
         
-        // WE KEEP THE SIMILAR LOGIC TO THE ORIGINAL TURING MACHINE SIMULATOR
-        let lineTokens: string[] = cleanedCode[0].split(this.COMMA)
-       
         const finalStates: Set<string> = new Set();
-        let initial: string = lineTokens[0]
+        let initialState: string
+        // let's enforce the INITIAL, FINAL FORMAT HERE TOO
+        // INITIAL DIRECTIVE -------------------------
+        let lineTokens = cleanedCode[0].split(this.DIRECTIVES_SEPARATOR)
+        
+        if(lineTokens[0].toLocaleLowerCase() !== "initial"){
+            // TODO: throw a compile time error, no initial state declared
+        }
 
+        if (!lineTokens[1]) {
+            // TODO: throw error - directive missing value/separator
+            return null
+        }
+
+        //WE CAN MAKE SURE IT IS A SINGLETON BY CHECKING FOR SEPARATORS
+        if(containsForbiddenChar(lineTokens[1].trim())){
+            //TODO: throw an error, initial state contains forbidden chars
+        }
+
+        initialState = lineTokens[1].trim()
+        // FINAL DIRECTIVE -------------------
+        lineTokens = cleanedCode[1].split(this.DIRECTIVES_SEPARATOR)
+        if(lineTokens[0].toLocaleLowerCase() !== "final"){
+            //TODO: throw a compile time error, no final states declared
+
+        } 
+
+        if (!lineTokens[1]) {
+            // TODO: throw error or allow empty final states depending on your DSL spec
+        } else {
+            lineTokens[1]
+                .split(this.COMMA)
+                .map(token => token.trim())
+                .filter(token => token.length > 0)
+                .forEach(token => finalStates.add(token));
+        }
         // TODO: Sanity check of the initial state!
         const instructions = new Map()
-        for(let i = 0; i < cleanedCode.length; i++){
+        for(let i = 2; i < cleanedCode.length; ++i){
+
             lineTokens = cleanedCode[i].split(this.COMMA)
             if(lineTokens.length !== 4){
                 // TODO: throw an error, incompatible instruction format
@@ -37,34 +79,34 @@ export class TuringMachineParser{
                 return null
             }
             let stateInnerMap: Map<string, ActionTransition> /*we use any for now */ = instructions.get(lineTokens[0]) || new Map()
-            if(!this.alphabet.has(lineTokens[1])){
+            if(!this.alphabet.has(lineTokens[1].trim())){
                 // TODO: throw an error, symbol does not belong to alphabet
-                console.log("letter not in alphabet")
+                console.log("letter not in alphabet", lineTokens[1])
                 return null
             }
             
             let currentAction: ActionTransition = stateInnerMap.get(lineTokens[1]) || {action: [], nextStates: []}
-            if(!this.alphabet.has(lineTokens[2]) /* || moveSymbols.has(lineTokens[2]) */){
+            if(!this.alphabet.has(lineTokens[2].trim()) /* || moveSymbols.has(lineTokens[2]) */){
                 //TODO: unrecognized symbol, error
-                console.log(lineTokens[2] ," not recognised")
+                console.log(lineTokens[2] ," not recognized")
                 return null
             }
             // fill the actions object
-            currentAction.action.push(lineTokens[2])
-            currentAction.nextStates.push(lineTokens[3])
+            currentAction.action.push(lineTokens[2].trim())
+            currentAction.nextStates.push(lineTokens[3].trim())
             // fill the state map
-            stateInnerMap.set(lineTokens[1],currentAction)
+            stateInnerMap.set(lineTokens[1].trim(),currentAction)
             // add the states map to the instructions map
-            instructions.set(lineTokens[0],stateInnerMap)
+            instructions.set(lineTokens[0].trim(),stateInnerMap)
 
 
         }
 
         return {
-            initial: initial,
+            initial: initialState,
             final: finalStates,
-            rightSymbol: 'R',
-            leftSymbol: 'L',
+            rightSymbol: this.rightSymbol,
+            leftSymbol: this.leftSymbol,
             stateTransitions: instructions
         }
     }

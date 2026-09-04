@@ -200,7 +200,9 @@ export class Engine{
                 newActiveStates.push(nextActions.nextStates[j]);
 
                 // Keep vectors perfectly synchronized in length across all branches
+                console.log(action, tm.rightSymbol, tm.leftSymbol)
                 if (action === tm.rightSymbol) {
+                    
                     newNextHeadPosition.push(1);
                     newTapesCurrentValue.push(currentSymbol); // Symbol stays identical
                 } else if (action === tm.leftSymbol) {       // Fixed: using 'j' instead of 'i'
@@ -220,7 +222,7 @@ export class Engine{
         this.headNextPosition = newNextHeadPosition;
         this.parentInstances = newParentsIndices;
         this.tapesCurrentValue = newTapesCurrentValue;
-
+        console.log(this.activeStates, this.headNextPosition, this.parentInstances, this.tapesCurrentValue)
     }
 
 

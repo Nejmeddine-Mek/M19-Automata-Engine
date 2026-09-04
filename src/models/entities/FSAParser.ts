@@ -1,16 +1,10 @@
 import type { FsaDefinition } from "../interfaces/FsaDefinition"
 import CleaningService from "../services/CleaningService"
+import { containsForbiddenChar } from "../services/ForbiddenCharactersCheck"
 
 export class FSAParser{
     private readonly DIRECTIVES_SEPARATOR = ":"
     private readonly COMMA = ","
-    // 
-    private readonly SPECIAL_CHARS = [
-    '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', 
-    '+', '=', '{', '}', '[', ']', '|', '\\', ':', '"', 
-    '\'', '<', '>', '?', '/', '`', '~'
-    ]
-
 
     private Alphabet: Set<string>
     private Code: string
@@ -49,7 +43,7 @@ export class FSAParser{
         }
 
         //WE CAN MAKE SURE IT IS A SINGLETON BY CHECKING FOR SEPARATORS
-        if(this.containsForbiddenChar(lineTokens[1].trim())){
+        if(containsForbiddenChar(lineTokens[1].trim())){
             //TODO: throw an error, initial state contains forbidden chars
         }
 
@@ -117,9 +111,7 @@ export class FSAParser{
 
 
     // Helper method to check if a token contains any forbidden special character
-    private containsForbiddenChar(token: string): boolean {
-    return this.SPECIAL_CHARS.some(char => token.includes(char));
-    }
+
     public getAlphabet(): Set<string> { return this.Alphabet }
     public getCode(): String{ return this.Code }
     public getEpsilon():String{ return this.epsilon }

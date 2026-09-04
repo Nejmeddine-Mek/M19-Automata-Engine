@@ -1,5 +1,6 @@
 import type { ActionTransition } from "../interfaces/LBADefinition"
 import CleaningService from "../services/CleaningService"
+import { containsForbiddenChar } from "../services/ForbiddenCharactersCheck"
 //-----------------------------------------------------------------
 //
 // here we can either write instructions as Si, xi, yi, Sj or Si, xi, Sj, yi we decide tomorrow
@@ -8,11 +9,7 @@ import CleaningService from "../services/CleaningService"
 export class LBAParser{
  private readonly DIRECTIVES_SEPARATOR = ":"
  private readonly COMMA = ","
-private readonly SPECIAL_CHARS = [
-    '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', 
-    '+', '=', '{', '}', '[', ']', '|', '\\', ':', '"', 
-    '\'', '<', '>', '?', '/', '`', '~'
-]
+
  private alphabet: Set<string>
 private epsilon: string
  public constructor(alphabet: string[], epsilon: string){
@@ -44,7 +41,7 @@ private epsilon: string
     }
 
     //WE CAN MAKE SURE IT IS A SINGLETON BY CHECKING FOR SEPARATORS
-    if(this.containsForbiddenChar(lineTokens[1].trim())){
+    if(containsForbiddenChar(lineTokens[1].trim())){
         //TODO: throw an error, initial state contains forbidden chars
     }
 
@@ -93,8 +90,4 @@ private epsilon: string
     }
  }
 
-    private containsForbiddenChar(token: string): boolean {
-    
-        return this.SPECIAL_CHARS.some(char => token.includes(char))
-    }
 }

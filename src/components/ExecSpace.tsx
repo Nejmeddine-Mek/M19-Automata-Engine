@@ -23,12 +23,13 @@ interface ExecSpaceProps {
   theme: ThemeConfig;
   onExecute?: (isJumpToResults: boolean, animationDelay: number, inputTape: string) => void;
   isExecuting?: boolean;
+  setIsHalted: (isHalted: boolean) => void
   activeTapes: any
   onRegisterTape: any
   onUnregisterTape: any
 }
 
-export function ExecSpace({ theme, onExecute, isExecuting = false, activeTapes, onRegisterTape, onUnregisterTape}: ExecSpaceProps) {
+export function ExecSpace({ theme, onExecute, isExecuting = false, setIsHalted, activeTapes, onRegisterTape, onUnregisterTape}: ExecSpaceProps) {
   const [inputArg, setInputArg] = useState<string>('');
   const [animSpeed, setAnimSpeed] = useState<number>(500); // Speed in ms
   const [jumpToResults, setJumpToResults] = useState<boolean>(false);
@@ -114,6 +115,7 @@ export function ExecSpace({ theme, onExecute, isExecuting = false, activeTapes, 
         <button
         type="button"
         disabled={!isExecuting}
+        onClick={() => setIsHalted(true)}
         className={`px-4 py-1.5 text-xs font-semibold ${theme.fontMono} uppercase tracking-wider 
             bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white 
             rounded transition-all duration-150 shadow-sm 

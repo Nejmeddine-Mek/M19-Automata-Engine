@@ -12,6 +12,7 @@ import { UIManager } from "./models/managers/UIManager"
 import type { TapeHandle, } from "./models/interfaces/TapeHandle"
 import type { ActiveTape, TapeStepChange } from "./models/interfaces/activeTapeConfigs"
 
+/*
 export const THEME = {
   bgApp: "bg-gray-100",
   bgSidebar: "bg-gray-200/50",
@@ -25,8 +26,8 @@ export const THEME = {
   focusRing: "focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500",
   fontSans: "font-sans",
   fontMono: "font-mono",
-};
-/*
+}; */
+
 export const THEME = {
   bgApp: "bg-zinc-950",
   bgSidebar: "bg-zinc-900/90",
@@ -41,18 +42,30 @@ export const THEME = {
   fontSans: "font-sans",
   fontMono: "font-mono",
 };
-*/
+
 export type ThemeType = typeof THEME;
 
 export default function App() {
+  /**
+   * This section here is dedicated to state variables related to the ui, mainly the code, configuration, display states
+   * and button states related to Execute and Halt buttons **pause, next and previous to be added**
+   */
   const [code, setCode] = useState<string>('');
   const [showConfigWindow, SetShowConfigWindow] = useState(true);
   const [showIde, setShowIde] = useState(false);
   const [isExecuting, setIsExecuting] = useState<boolean>(false);
+  const [isHalted, setHalt] = useState<boolean>(false)
+  const [machineConfig, setMachineConfig] = useState<FSAConfig | PDAConfig | LBAConfig | TMConfig | null>(null)
 
-  const [machineConfig, setMachineConfig] = useState<FSAConfig | PDAConfig | LBAConfig | TMConfig | null>(null);
-  const [executionManager, setExecutionManager] = useState<ExecutionManager | null>(null);
-  const [activeTapes, setActiveTapes] = useState<Record<string, TapeHandle>>({});
+  /**
+   * Here we start declaring our references for every manager:
+   * 1- Parsing manager responsible for parsing code and generating definitions the engine needs
+   * 2- Execution manager: runs the engine and returns updated states in form of a SoA {activeStates, nextHeadPosition, currentTapeValue...}
+   * 3- UI manager: responsible for updating and setting the visuals, as well as saving copies of tapes at every step 
+   */
+  const executionManager = useRef<ExecutionManager | null>(null);
+
+  const [activeTapes, setActiveTapes] = useState<ActiveTape[]>([]);
 
   const uiManagerRef = useRef<UIManager | null>(null);
   if (uiManagerRef.current === null) {
@@ -70,6 +83,7 @@ export default function App() {
   }, []);
 
   const handleExecute = (isJumpToResults: boolean, animationDelay: number, inputTape: string) => {
+
     if(machineConfig === null){
       // TODO: emit an error
       return
@@ -79,6 +93,7 @@ export default function App() {
       // NO CODE TO PARSE
       return
     }
+
       console.log("Extracting code from IDE state:", code);
       // TODO: finish the rest of the work
       console.log("data for execution and animation management", isJumpToResults, animationDelay, inputTape)
@@ -88,8 +103,9 @@ export default function App() {
       const parsingManager: ParsingManager = new ParsingManager(machineConfig?.machineType!)
       const definition = parsingManager.parseCode(machineConfig, code)
       // up until here, we have our definitions object well set, next, we need to create the UI manager and the execution manager
+      console.log("def: ", definition)
       const execMgr = new ExecutionManager(machineConfig.machineType, inputTape, definition);
-      setExecutionManager(execMgr)
+      executionManager.current = execMgr
       uiManagerRef.current!.setAnimationSpeed(animationDelay)
       //--- TODO: execution 
       // ...
@@ -113,27 +129,30 @@ export default function App() {
             stackAction: undefined,
             stackValue: undefined
         })
+        
         uiManagerRef.current!.renderInitialTape(activeTapeInstances[0])
         execMgr.setInitialTapeStates(activeTapeInstances)
         
       }
 
     }
+
   useEffect(() => {
     if (executionManager && Object.keys(activeTapes).length > 0) {
       console.log("Tapes registered, waiting for animationDelay…");
 
       const timer = setTimeout(() => {
-        console.log("Starting execution after delay");
-        executionManager.run(true);
-        const newState = executionManager.getCurrentExecutionState();
+        console.log("Starting execution after delay")
+        executionManager.current!.run(true);
+        const newState = executionManager.current!.getCurrentExecutionState();
         uiManagerRef.current!.updateTapes(newState);
       }, uiManagerRef.current!.getAnimationSpeed()); // or pass animationDelay directly
 
       return () => clearTimeout(timer); // cleanup if component unmounts
+      
     }
   }, [executionManager, activeTapes]);
-    
+
   return (
     <div className={`flex flex-col h-screen w-screen overflow-hidden ${THEME.bgApp} text-slate-100 ${THEME.fontSans}`}>
       <Header theme={THEME}/>
@@ -143,7 +162,7 @@ export default function App() {
         <section className={`w-[75%] h-full ${THEME.bgApp} ${THEME.border} border-r p-6 flex flex-col justify-start items-stretch gap-4 overflow-y-auto`}>
           {/* 1. Toolbar pinned at the top */}
           <div className="w-full shrink-0">
-            <ExecSpace theme={THEME} onExecute={handleExecute} isExecuting={isExecuting} activeTapes={activeTapes} onRegisterTape={handleRegisterTape} onUnregisterTape={handleUnregisterTape}/>
+            <ExecSpace theme={THEME} onExecute={handleExecute} isExecuting={isExecuting} setIsHalted={setHalt} activeTapes={activeTapes} onRegisterTape={handleRegisterTape} onUnregisterTape={handleUnregisterTape}/>
           </div>
         </section>
 
