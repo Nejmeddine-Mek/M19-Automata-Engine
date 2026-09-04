@@ -11,6 +11,7 @@ export interface EngineState{
     // let's argue about this a little, when we are using a set, we can't track every active state in the case of non-determinism, because we
     // are very likely to be running at least the same state twice, considering that sets by nature remove duplicates, we find ourselves losing track
     // of our execution flow
+    idsList: string[],
     activeStates: string[], // here we have a list of active states of any automaton
     tapesCurrentValue: string[], // this is an array of current tape value at the current head position for each instance, 
         // meaning, we are only tracking each tape, by the value pointed at by the R/W head, and if any change happens, the Execution manager will update
@@ -21,18 +22,21 @@ export interface EngineState{
     stackTops: (string | null)[] | null // this must strictly remain null if the machine type is not a Push Down automaton
     // thus, the constructor will always be defining it as null, and only when starting to execute, it is initialized to [] in we are dealing with a PDA
     // in reality, the stack top is never empty, so it has its own particularities that will be handles by a specific unit when working with PDAs
+    halted: boolean
 }
 
 export class Engine{
     // we keep these completely private without any setters to prevent any unwanted access from the outside
     // the engine will be directly referencing objects to read or write to minimize overhead
     // TODO: more details and execution flow will be done later
+    private idsList: string[]
     private headNextPosition: number[]
     private activeStates: string[]
     private parentInstances: number[]
     private tapesCurrentValue: string[]
     private stackTops: (string | null)[] | null
-    
+    private halted: boolean = false;
+
     // This object is not intended to be read outside this class
     private machineDefinition!: FsaDefinition | TMDefinition | PDADefinition | LBADefinition
     private TargetHandler: () => void;
@@ -42,6 +46,7 @@ export class Engine{
         this.headNextPosition = []
         this.parentInstances = []
         this.tapesCurrentValue = []
+        this.idsList = []
         this.stackTops = null
         
         switch(machineType){
@@ -52,6 +57,7 @@ export class Engine{
                 this.TargetHandler = this.PDAExec.bind(this)
                 break
             case 'LBA':
+                this.stackTops = []
                 this.TargetHandler = this.LBAExec.bind(this)
                 break
             case 'TM':
@@ -68,12 +74,13 @@ export class Engine{
     }
 
     // CAUTION: ONLY CALL THIS FUNCTION BEFORE STARTING THE EXECUTION
-    public setInitialTapeState(valueAtEntry: string, headNextPos: number, definition: FsaDefinition | TMDefinition | LBADefinition | PDADefinition){
+    public setInitialTapeState(valueAtEntry: string, headNextPos: number, definition: FsaDefinition | TMDefinition | LBADefinition | PDADefinition, id: string){
         this.machineDefinition = definition
 
         this.parentInstances.push(-1)
         this.tapesCurrentValue.push(valueAtEntry)
         this.headNextPosition.push(headNextPos)
+        this.idsList.push(id)
         // this value should be imported from the PDA parser or config which should be the default value on empty stack
         if(this.stackTops)
             this.stackTops.push('#')
@@ -86,6 +93,7 @@ export class Engine{
     // TODO: work more on this
     private FSAExec() {
         const fsa = this.machineDefinition as FsaDefinition;
+        const newIdsList: string[] = []
         const newNextHeadPosition: number[] = [];
         const newActiveStates: string[] = [];
         const newParentsIndices: number[] = [];
@@ -118,47 +126,38 @@ export class Engine{
                     }
                 }
             }
-
             // 2. Consume Symbol & Spawn Next Instances
-            const currentSymbol = this.tapesCurrentValue[i];
-            const nextPos = this.headNextPosition[i] + 1;
+            const currentSymbol = this.tapesCurrentValue[i]
+            const nextPos = 1;
             const resolvedActiveStatesList = Array.from(resolvedActiveStates)
+
             for(let j = 0; j < resolvedActiveStatesList.length; ++j){
                 const nextStates = fsa.stateTransition.get(resolvedActiveStatesList[j])?.get(currentSymbol)
                 if(nextStates){
                     for(let k = 0; k < nextStates.length; ++k){
                         if( k === 0 && j === 0){
                             newParentsIndices.push(this.parentInstances[i])
+                            newIdsList.push(this.idsList[i])
                         } else {
-                            newParentsIndices.push(i);
+                            newParentsIndices.push(i)
+                            newIdsList.push(ExecutionManager.assignId())
                         }
-                        newActiveStates.push(nextStates[k]);
-                        newNextHeadPosition.push(nextPos);
-                        newTapesCurrentValue.push(currentSymbol);
+                        newActiveStates.push(nextStates[k])
+                        newNextHeadPosition.push(nextPos)
+                        newTapesCurrentValue.push(currentSymbol)
                     }
                 }
             }
-            /*for (const state of resolvedActiveStates) {
-                const nextStates = fsa.stateTransition.get(state)?.get(currentSymbol);
 
-                if (nextStates) {
-                    // Safely iterate without mutating definition arrays or pushing to this.activeStates
-
-                    for (const nextState of nextStates) {
-                        newActiveStates.push(nextState);
-                        newParentsIndices.push(i);
-                        newNextHeadPosition.push(nextPos);
-                        newTapesCurrentValue.push(currentSymbol); // Inherit tape state
-                    }
-                }
-            }*/
         }
 
         // 3. Atomically update vectors for the next execution step
+        this.idsList = newIdsList
         this.activeStates = newActiveStates;
         this.headNextPosition = newNextHeadPosition;
         this.parentInstances = newParentsIndices;
         this.tapesCurrentValue = newTapesCurrentValue;
+        console.log(this.headNextPosition)
     }
 
 
@@ -169,70 +168,107 @@ export class Engine{
     private LBAExec(){
 
     }
-    private TMExec(){
-        const tm = this.machineDefinition as TMDefinition
+    private TMExec() {
+        const tm = this.machineDefinition as TMDefinition;
+
+        const newIdsList: string[] = [];
         const newNextHeadPosition: number[] = [];
         const newActiveStates: string[] = [];
         const newParentsIndices: number[] = [];
-        const newTapesCurrentValue: string[] = []; // Sync tape values for new instances
-        
+        const newTapesCurrentValue: string[] = [];
 
-        // consume current symbol and spawn next state
+        // Consume the current symbol and spawn the next execution instances.
         for (let i = 0; i < this.activeStates.length; ++i) {
             const currentState = this.activeStates[i];
             const currentSymbol = this.tapesCurrentValue[i];
-            
-            // 1. Fetch transition map for the active state
+
+            // 1. Fetch transitions for the current state.
             const innerMap = tm.stateTransitions.get(currentState);
+
             if (!innerMap) {
-                continue; // Halts only this specific branch, lets others continue
+                // This branch has no outgoing transitions.
+                continue;
             }
 
-            // 2. Fetch actions for the current tape symbol
+            // 2. Fetch actions for the current tape symbol.
             const nextActions = innerMap.get(currentSymbol);
+
             if (!nextActions) {
-                continue; // Non-accepting dead end for this branch
+                // This branch has no valid transition.
+                continue;
             }
 
-            // 3. Process each spawned non-deterministic branch
+            // 3. Spawn one execution instance for each possible action.
             for (let j = 0; j < nextActions.action.length; ++j) {
                 const action = nextActions.action[j];
-                newActiveStates.push(nextActions.nextStates[j]);
+                const nextState = nextActions.nextStates[j];
 
-                // Keep vectors perfectly synchronized in length across all branches
-                console.log(action, tm.rightSymbol, tm.leftSymbol)
+                newActiveStates.push(nextState);
+
+                /*
+                * Every transition performs exactly ONE operation:
+                *
+                *   R -> move right, do not write
+                *   L -> move left,  do not write
+                *   X -> write X,    do not move
+                */
                 if (action === tm.rightSymbol) {
-                    
                     newNextHeadPosition.push(1);
-                    newTapesCurrentValue.push(currentSymbol); // Symbol stays identical
-                } else if (action === tm.leftSymbol) {       // Fixed: using 'j' instead of 'i'
+                    newTapesCurrentValue.push(currentSymbol);
+
+                } else if (action === tm.leftSymbol) {
                     newNextHeadPosition.push(-1);
-                    newTapesCurrentValue.push(currentSymbol); // Symbol stays identical
+                    newTapesCurrentValue.push(currentSymbol);
+
                 } else {
-                    newNextHeadPosition.push(0);              // Head stays put
-                    newTapesCurrentValue.push(action);        // Symbol overwritten
+                    // Write operation: head remains stationary.
+                    newNextHeadPosition.push(0);
+                    newTapesCurrentValue.push(action);
                 }
 
-                // Lineage tracking: branch 0 retains the current parent ID; extra branches map back to branch 'i'
-                newParentsIndices.push(j === 0 ? this.parentInstances[i] : i);
+                /*
+                * Lineage:
+                *
+                * First branch keeps the current instance's ID/parent.
+                * Additional nondeterministic branches get their own ID
+                * and point back to the current instance.
+                */
+                if (j === 0) {
+                    newIdsList.push(this.idsList[i]);
+                    newParentsIndices.push(this.parentInstances[i]);
+                } else {
+                    newIdsList.push(ExecutionManager.assignId());
+                    newParentsIndices.push(i);
+                }
             }
         }
-        // 3. Atomically update vectors for the next execution step
+
+        // 4. Atomically update all execution vectors.
+        this.idsList = newIdsList;
         this.activeStates = newActiveStates;
         this.headNextPosition = newNextHeadPosition;
         this.parentInstances = newParentsIndices;
         this.tapesCurrentValue = newTapesCurrentValue;
-        console.log(this.activeStates, this.headNextPosition, this.parentInstances, this.tapesCurrentValue)
+
+        console.log({
+            idsList: this.idsList,
+            activeStates: this.activeStates,
+            headMovements: this.headNextPosition,
+            parentInstances: this.parentInstances,
+            tapeValues: this.tapesCurrentValue,
+        });
     }
 
 
     public getEngineState(): EngineState{
         return {
+            idsList: this.idsList,
             activeStates: this.activeStates,
             parentInstances: this.parentInstances,
             headNextPosition: this.headNextPosition,
             tapesCurrentValue: this.tapesCurrentValue,
-            stackTops: this.stackTops
+            stackTops: this.stackTops,
+            halted: this.halted
 
         }
     }

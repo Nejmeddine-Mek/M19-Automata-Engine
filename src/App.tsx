@@ -63,95 +63,102 @@ export default function App() {
    * 2- Execution manager: runs the engine and returns updated states in form of a SoA {activeStates, nextHeadPosition, currentTapeValue...}
    * 3- UI manager: responsible for updating and setting the visuals, as well as saving copies of tapes at every step 
    */
-  const executionManager = useRef<ExecutionManager | null>(null);
-
+  const executionManagerRef = useRef<ExecutionManager | null>(null);
   const [activeTapes, setActiveTapes] = useState<ActiveTape[]>([]);
-
   const uiManagerRef = useRef<UIManager | null>(null);
-  if (uiManagerRef.current === null) {
-    uiManagerRef.current = new UIManager(setActiveTapes, 0);
-  }
-
-  // Registration callbacks
-  const handleRegisterTape = useCallback((id: string, handle: TapeHandle) => {
-    console.log("Registering tape:", id);
-    uiManagerRef.current!.registerTapeHandle(id, handle);
-  }, []);
-
-  const handleUnregisterTape = useCallback((id: string) => {
-    uiManagerRef.current!.unregisterTapeHandle(id);
-  }, []);
-
-  const handleExecute = (isJumpToResults: boolean, animationDelay: number, inputTape: string) => {
-
-    if(machineConfig === null){
-      // TODO: emit an error
-      return
-    }
-    // this is a primary check, \n\n\n\n\n will be handled at the level of the parser
-    if(code.length === 0){
-      // NO CODE TO PARSE
-      return
-    }
-
-      console.log("Extracting code from IDE state:", code);
-      // TODO: finish the rest of the work
-      console.log("data for execution and animation management", isJumpToResults, animationDelay, inputTape)
-      console.log("Machine Configs: ", machineConfig)
-      setIsExecuting(true)
-      // now we have our code, our config, all set we can proceed to the parsing manager
-      const parsingManager: ParsingManager = new ParsingManager(machineConfig?.machineType!)
-      const definition = parsingManager.parseCode(machineConfig, code)
-      // up until here, we have our definitions object well set, next, we need to create the UI manager and the execution manager
-      console.log("def: ", definition)
-      const execMgr = new ExecutionManager(machineConfig.machineType, inputTape, definition);
-      executionManager.current = execMgr
-      uiManagerRef.current!.setAnimationSpeed(animationDelay)
-      //--- TODO: execution 
-      // ...
-      {
-        console.log("synchronizing execution here")
-        // this will be governed by the type of the machine and not randomly like this, meaning it requires more code
-        const activeTapeInstances: ActiveTape[] = []
-        const tapesStepChange: TapeStepChange[] = []
-        activeTapeInstances.push({
-            tapeValue: inputTape.split(''),
-            parentIndex: -1,
-            currentHeadPosition: 0,
-            stack: null,
-            id: execMgr.assignId(),
-            index: 0
-        })
-        tapesStepChange.push({
-            animationSpeed: 250,
-            action: 'NOOP',
-            direction: 'HOLD',
-            stackAction: undefined,
-            stackValue: undefined
-        })
-        
-        uiManagerRef.current!.renderInitialTape(activeTapeInstances[0])
-        execMgr.setInitialTapeStates(activeTapeInstances)
-        
-      }
-
-    }
 
   useEffect(() => {
-    if (executionManager && Object.keys(activeTapes).length > 0) {
-      console.log("Tapes registered, waiting for animationDelay…");
-
-      const timer = setTimeout(() => {
-        console.log("Starting execution after delay")
-        executionManager.current!.run(true);
-        const newState = executionManager.current!.getCurrentExecutionState();
-        uiManagerRef.current!.updateTapes(newState);
-      }, uiManagerRef.current!.getAnimationSpeed()); // or pass animationDelay directly
-
-      return () => clearTimeout(timer); // cleanup if component unmounts
-      
+    if (!uiManagerRef.current) {
+      uiManagerRef.current = new UIManager(setActiveTapes, 250); // default speed
     }
-  }, [executionManager, activeTapes]);
+  }, []);
+
+  // registration callbacks
+  const handleRegisterTape = useCallback((id: string, handle: TapeHandle) => {
+    console.log("Registering tape:", id);
+    uiManagerRef.current?.registry.registerTapeHandle(id, handle);
+  }, [])
+
+  const handleUnregisterTape = useCallback((id: string) => {
+    uiManagerRef.current?.registry.unregisterTapeHandle(id);
+  }, [])
+
+  const handleExecute = (isJumpToResults: boolean, animationDelay: number, inputTape: string) => {
+    setHalt(false)
+    if (!machineConfig || code.length === 0) {
+      console.error("No machine config or code to parse");
+      return;
+    }
+
+    setIsExecuting(true)
+
+    // now we have our code, our config, all set we can proceed to the parsing manager
+
+    const parsingManager = new ParsingManager(machineConfig.machineType);
+    const definition = parsingManager.parseCode(machineConfig, code);
+
+    const execMgr = new ExecutionManager(machineConfig.machineType, inputTape, definition);
+    executionManagerRef.current = execMgr;
+
+    uiManagerRef.current?.controller.setAnimationDelay(animationDelay);
+
+    // Initial tape setup
+    const initialTape: ActiveTape = {
+      tapeValue: inputTape.split(""),
+      parentIndex: -1,
+      currentHeadPosition: 0,
+      stack: null,
+      id: ExecutionManager.assignId(),
+      index: 0,
+    };
+
+    uiManagerRef.current?.renderer.renderInitialTape(initialTape)
+    execMgr.setInitialTapeStates([initialTape])
+  }
+
+  useEffect(() => {
+    if (isHalted) {
+      console.log("Halting execution…");
+      uiManagerRef.current?.controller.pause();
+      setIsExecuting(false);
+      executionManagerRef.current = null;
+      // tapes remain visible, history intact
+    }
+  }, [isHalted]);
+
+useEffect(() => {
+  if (isExecuting && executionManagerRef.current && activeTapes.length > 0) {
+    let cancelled = false;
+    console.log("executing step")
+    const runStep = async () => {
+      if (
+        !cancelled &&
+        executionManagerRef.current?.hasNextStep() &&
+        !isHalted &&
+        uiManagerRef.current?.controller.isRunning()
+      ) {
+        await uiManagerRef.current!.controller.delay();
+
+        executionManagerRef.current!.runStep();
+        const newState = executionManagerRef.current!.getCurrentExecutionState();
+
+        uiManagerRef.current!.renderer.updateTapes(newState, uiManagerRef.current!.registry);
+
+        // schedule next step
+        runStep();
+        console.log("finished executing step")
+      } else {
+        setIsExecuting(false);
+      }
+    };
+
+    runStep();
+
+    return () => {
+      cancelled = true; // cleanup if component unmounts or deps change
+    };
+  }
+}, [isExecuting, isHalted, activeTapes]);
 
   return (
     <div className={`flex flex-col h-screen w-screen overflow-hidden ${THEME.bgApp} text-slate-100 ${THEME.fontSans}`}>

@@ -120,10 +120,9 @@ export const Tape = forwardRef<TapeHandle, TapeProps>(function Tape(
   useImperativeHandle(ref, () => handleAPI);
 
   // --- 4. LIFECYCLE REGISTRATION ---
-  console.log(onRegisterTape, onUnregisterTape)
-  console.log("tape mounted, reached the useEffect point")
+
   useEffect(() => {
-    console.log("pushing, tape mounted")
+
     onRegisterTape(id, handleAPI);
 
     return () => {
