@@ -1,6 +1,6 @@
-
 import React, { useState } from 'react';
 import type { ActiveTape } from '../models/interfaces/activeTapeConfigs';
+import type { ExecutionStatus } from '../models/interfaces/executionStatus';
 import Tape from './Tape';
 import Stack from './Stack';
 
@@ -21,27 +21,42 @@ export interface ThemeConfig {
 
 interface ExecSpaceProps {
   theme: ThemeConfig;
-  onExecute?: (isJumpToResults: boolean, animationDelay: number, inputTape: string) => void;
-  isExecuting?: boolean;
-  setIsHalted: (isHalted: boolean) => void
-  activeTapes: any
-  onRegisterTape: any
-  onUnregisterTape: any
+  activeTapes: ActiveTape[];
+  executionStatus: ExecutionStatus;
+  canStepBack: boolean;
+  canStepForward: boolean;
+  onExecute: (inputTape: string, animationDelay: number) => void;
+  onStep: () => void;
+  onRun: () => void;
+  onPause: () => void;
+  onHalt: () => void;
+  onStepBack: () => void;
+  onStepForward: () => void;
 }
 
-export function ExecSpace({ theme, onExecute, isExecuting = false, setIsHalted, activeTapes, onRegisterTape, onUnregisterTape}: ExecSpaceProps) {
+export function ExecSpace({
+  theme,
+  activeTapes,
+  executionStatus,
+  canStepBack,
+  canStepForward,
+  onExecute,
+  onStep,
+  onRun,
+  onPause,
+  onHalt,
+  onStepBack,
+  onStepForward,
+}: ExecSpaceProps) {
   const [inputArg, setInputArg] = useState<string>('');
-  const [animSpeed, setAnimSpeed] = useState<number>(500); // Speed in ms
-  const [jumpToResults, setJumpToResults] = useState<boolean>(false);
-  
+  const [animSpeed, setAnimSpeed] = useState<number>(250); // Speed in ms
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onExecute) {
-
-      onExecute(jumpToResults, animSpeed, inputArg);
-    }
+    onExecute(inputArg, animSpeed);
   };
+
+  const { isExecuting, isHalted, isAccepted, isRejected } = executionStatus;
 
   return (
     <div className={`w-full flex flex-col ${theme.bgPanelInner} border ${theme.border} rounded-lg shadow-sm ${theme.fontSans}`}>
@@ -85,72 +100,140 @@ export function ExecSpace({ theme, onExecute, isExecuting = false, setIsHalted, 
             step="50"
             value={animSpeed}
             onChange={(e) => setAnimSpeed(Number(e.target.value))}
-            disabled={jumpToResults || isExecuting}
+            disabled={isExecuting}
             className="w-28 accent-sky-500 bg-gray-200 rounded cursor-pointer disabled:opacity-30"
           />
         </div>
 
-        {/* Jump to Results Checkbox */}
-        <label className={`flex items-center gap-2 cursor-pointer text-xs ${theme.fontMono} ${theme.textTitle} hover:${theme.textInput} select-none`}>
-          <input
-            type="checkbox"
-            checked={jumpToResults}
-            onChange={(e) => setJumpToResults(e.target.checked)}
+        {/* Action Controls */}
+        <div className="flex items-center gap-2">
+          {/* History Back */}
+          <button
+            type="button"
+            onClick={onStepBack}
+            disabled={!canStepBack || isExecuting}
+            title="Step Back"
+            className="px-2.5 py-1.5 text-xs font-semibold font-mono bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 rounded text-zinc-200 cursor-pointer"
+          >
+            ◀
+          </button>
+
+          {/* Step Forward */}
+          <button
+            type="button"
+            onClick={onStep}
+            disabled={isHalted || isExecuting}
+            title="Step Forward"
+            className="px-3 py-1.5 text-xs font-semibold font-mono bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 rounded text-zinc-200 cursor-pointer"
+          >
+            Step ▶
+          </button>
+
+          {/* History Forward */}
+          <button
+            type="button"
+            onClick={onStepForward}
+            disabled={!canStepForward || isExecuting}
+            title="Step Forward (History)"
+            className="px-2.5 py-1.5 text-xs font-semibold font-mono bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 rounded text-zinc-200 cursor-pointer"
+          >
+            ▶
+          </button>
+
+          {/* Run / Pause Toggle */}
+          {isExecuting ? (
+            <button
+              type="button"
+              onClick={onPause}
+              className="px-4 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider bg-amber-600 hover:bg-amber-500 text-white rounded transition-all shadow-sm cursor-pointer"
+            >
+              Pause
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onRun}
+              disabled={isHalted || activeTapes.length === 0}
+              className="px-4 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white rounded transition-all shadow-sm cursor-pointer"
+            >
+              Run
+            </button>
+          )}
+
+          {/* Execute (Initialize) Button */}
+          <button
+            type="submit"
             disabled={isExecuting}
-            className="w-4 h-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500/30 cursor-pointer accent-sky-500 disabled:opacity-50"
-          />
-          Jump to Results
-        </label>
+            className="px-4 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider bg-sky-600 hover:bg-sky-500 text-white rounded transition-all shadow-sm disabled:opacity-50 cursor-pointer"
+          >
+            Load & Init
+          </button>
 
-        {/* Execute Action Button */}
-        <button
-          type="submit"
-
-          disabled={isExecuting}
-          className={`px-4 py-1.5 text-xs font-semibold ${theme.fontMono} uppercase tracking-wider bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white rounded transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed`}
-        >
-          {isExecuting ? 'Running...' : 'Execute'}
-        </button>
-                {/* Execute Action Button */}
-        <button
-        type="button"
-        disabled={!isExecuting}
-        onClick={() => setIsHalted(true)}
-        className={`px-4 py-1.5 text-xs font-semibold ${theme.fontMono} uppercase tracking-wider 
-            bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white 
-            rounded transition-all duration-150 shadow-sm 
-            disabled:bg-gray-200 disabled:text-gray-400 disabled:border-transparent 
-            disabled:shadow-none disabled:cursor-not-allowed disabled:opacity-60
-            focus:outline-none focus:ring-2 focus:ring-rose-500/40`}
-        >
-        Halt
-        </button>
+          {/* Halt Action Button */}
+          <button
+            type="button"
+            disabled={isHalted || activeTapes.length === 0}
+            onClick={onHalt}
+            className="px-4 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider bg-rose-600 hover:bg-rose-500 text-white rounded transition-all shadow-sm disabled:opacity-40 cursor-pointer"
+          >
+            Halt
+          </button>
+        </div>
       </form>
-      {/* 2. Visualizer Workspace (Expands to fill all remaining vertical space) */}
+
+      {/* Status Bar Banner */}
+      {(isAccepted || isRejected || isHalted) && (
+        <div className={`px-4 py-1.5 text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-between border-b ${theme.borderSubtle} ${
+          isAccepted ? 'bg-emerald-950/60 text-emerald-400' : isRejected ? 'bg-rose-950/60 text-rose-400' : 'bg-amber-950/60 text-amber-400'
+        }`}>
+          <span>
+            {isAccepted ? '✓ Input Accepted' : isRejected ? '✗ Input Rejected' : '⏸ Execution Halted'}
+          </span>
+          <span className="text-[10px] opacity-80">
+            Step Count: {executionStatus.stepCount}
+          </span>
+        </div>
+      )}
+
+      {/* 2. Visualizer Workspace */}
       <div className={`flex-1 w-full ${theme.bgPanelInner} border ${theme.border} rounded-lg p-6 flex items-center justify-center shadow-sm`}>
         {activeTapes && activeTapes.length > 0 ? (
           <div className="flex flex-col gap-4 w-full h-full justify-start">
-            {activeTapes.map((tape: ActiveTape, index: number) => (
-              <div key={index} className="flex items-center gap-4 w-full">
-                {/* Tape Component */}
-                <div className="flex-1">
-                  <Tape id={tape.id} theme={theme} index={tape.index} parentIndex={tape.parentIndex} initialTapeData={tape.tapeValue} initialHeadPosition={tape.currentHeadPosition} onRegisterTape={onRegisterTape} onUnregisterTape={onUnregisterTape} animationSpeed={animSpeed}/>
-                </div>
-                {/* Stack (renders only if tape.stack !== null) */}
-                {tape.stack !== null && (
-                  <div className={`flex flex-col items-center p-3 min-w-[120px] ${theme.bgPanelInner} border ${theme.border} rounded-lg`}>
-                    <span className={`text-[10px] font-bold ${theme.fontMono} uppercase ${theme.textMuted} mb-2`}>
-                      Stack
-                    </span>
-                    <Stack />
+            {activeTapes.map((tape: ActiveTape) => {
+              const parentTape = activeTapes.find((t) => t.id === tape.parentId);
+              const parentIndex = parentTape ? parentTape.index : undefined;
+
+              return (
+                <div key={tape.id} className="flex items-center gap-4 w-full">
+                  {/* Tape Component */}
+                  <div className="flex-1">
+                    <Tape
+                      id={tape.id}
+                      theme={theme}
+                      index={tape.index}
+                      parentIndex={parentIndex}
+                      tapeData={tape.tapeValue}
+                      headPosition={tape.currentHeadPosition}
+                      status={tape.status}
+                      animationSpeed={animSpeed}
+                    />
                   </div>
-                )}
-              </div>
-            ))}
+                  {/* Stack (renders only if tape.stack !== null) */}
+                  {tape.stack !== null && (
+                    <div className={`flex flex-col items-center p-3 min-w-[120px] ${theme.bgPanelInner} border ${theme.border} rounded-lg`}>
+                      <span className={`text-[10px] font-bold ${theme.fontMono} uppercase ${theme.textMuted} mb-2`}>
+                        Stack
+                      </span>
+                      <Stack />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         ) : (
           <span className={`text-sm ${theme.fontMono} ${theme.textMuted}`}>
-            No execution state loaded. Enter input above and click Execute.
+            No execution state loaded. Enter input above and click Load & Init.
           </span>
         )}
       </div>
@@ -158,4 +241,4 @@ export function ExecSpace({ theme, onExecute, isExecuting = false, setIsHalted, 
   );
 }
 
-export default ExecSpace
+export default ExecSpace;

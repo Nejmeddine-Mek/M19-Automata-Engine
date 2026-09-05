@@ -88,6 +88,7 @@ private epsilon: string
         instructions.set(lineTokens[0],stateInnerMap)
             
     }
+    console.log(initialState, finalStates, instructions);
  }
 
 }

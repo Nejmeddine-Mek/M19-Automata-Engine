@@ -1,12 +1,10 @@
-import React from 'react';
-
 interface IDEProps {
   code: string;
   onChange: (value: string) => void;
   THEME?: Record<string, string>;
 }
 
-export default function IDE({ code, onChange, THEME }: IDEProps) {
+export default function IDE({ code, onChange }: IDEProps) {
   return (
     <div className="flex flex-col h-full w-full">
       {/* Editor Header Bar */}

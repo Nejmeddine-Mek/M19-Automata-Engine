@@ -9,6 +9,7 @@ export class TuringMachineParser{
     private code: string
     private rightSymbol: string
     private leftSymbol: string
+    private blankSymbol: string
     private alphabet: Set<string>
     /*
     **
@@ -16,11 +17,12 @@ export class TuringMachineParser{
         - IT ISN'T A MAJOR ISSUE, AS THE SET REMOVES DUPLICATES ANYWAY
     **
     */
-    public constructor(alphabet: string[], code: string, rightSymbol: string, leftSymbol: string){
-        this.alphabet = new Set([...alphabet, rightSymbol, leftSymbol])
+    public constructor(alphabet: string[], code: string, rightSymbol: string, leftSymbol: string, blankSymbol: string){
+        this.alphabet = new Set([...alphabet, rightSymbol, leftSymbol, blankSymbol])
         this.code = code
         this.rightSymbol = rightSymbol
         this.leftSymbol = leftSymbol
+        this.blankSymbol = blankSymbol
     }
 
     public parseInstructions(): TMDefinition | null {
@@ -71,7 +73,7 @@ export class TuringMachineParser{
         // TODO: Sanity check of the initial state!
         const instructions = new Map()
         for(let i = 2; i < cleanedCode.length; ++i){
-
+            console.log(lineTokens)
             lineTokens = cleanedCode[i].split(this.COMMA)
             if(lineTokens.length !== 4){
                 // TODO: throw an error, incompatible instruction format
@@ -85,7 +87,7 @@ export class TuringMachineParser{
                 return null
             }
             
-            let currentAction: ActionTransition = stateInnerMap.get(lineTokens[1]) || {action: [], nextStates: []}
+            let currentAction: ActionTransition = stateInnerMap.get(lineTokens[1].trim()) || {action: [], nextStates: []}
             if(!this.alphabet.has(lineTokens[2].trim()) /* || moveSymbols.has(lineTokens[2]) */){
                 //TODO: unrecognized symbol, error
                 console.log(lineTokens[2] ," not recognized")
@@ -94,6 +96,7 @@ export class TuringMachineParser{
             // fill the actions object
             currentAction.action.push(lineTokens[2].trim())
             currentAction.nextStates.push(lineTokens[3].trim())
+            console.log(currentAction)
             // fill the state map
             stateInnerMap.set(lineTokens[1].trim(),currentAction)
             // add the states map to the instructions map
@@ -104,9 +107,10 @@ export class TuringMachineParser{
 
         return {
             initial: initialState,
-            final: finalStates,
+            finalStates: finalStates,
             rightSymbol: this.rightSymbol,
             leftSymbol: this.leftSymbol,
+            blankSymbol: this.blankSymbol,
             stateTransitions: instructions
         }
     }

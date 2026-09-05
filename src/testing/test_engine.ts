@@ -1,7 +1,7 @@
 import { Engine } from "../models/entities/Engine";
 import { FSAParser } from "../models/entities/FSAParser";
 import type { FsaDefinition } from "../models/interfaces/FsaDefinition";
-import { ExecutionManager } from "../models/managers/ExecutionManager";
+import { InstanceManager } from "../models/managers/executionSubClasses/InstanceManager";
 
 function test() {
     const instructions = [
@@ -27,7 +27,7 @@ function test() {
         input[0] ?? "",
         0,
         definition,
-        ExecutionManager.assignId()
+        InstanceManager.assignId()
     );
 
     let currentState = engine.getEngineState();

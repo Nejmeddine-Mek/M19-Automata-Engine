@@ -1,32 +1,10 @@
-import { useState, useRef, useCallback, useEffect } from "react"
-import Config from "./components/Config"
-import Header from "./components/Header"
-
-
-import ExecSpace from "./components/ExecSpace"
-import IDE from "./components/IDE"
-import type { FSAConfig, LBAConfig, PDAConfig, TMConfig } from "./models/interfaces/configs"
-import { ParsingManager } from "./models/managers/ParsingManager"
-import { ExecutionManager } from "./models/managers/ExecutionManager"
-import { UIManager } from "./models/managers/UIManager"
-import type { TapeHandle, } from "./models/interfaces/TapeHandle"
-import type { ActiveTape, TapeStepChange } from "./models/interfaces/activeTapeConfigs"
-
-/*
-export const THEME = {
-  bgApp: "bg-gray-100",
-  bgSidebar: "bg-gray-200/50",
-  bgPanelInner: "bg-white",
-  bgInput: "bg-gray-50",
-  border: "border-gray-300",
-  borderSubtle: "border-gray-200",
-  textTitle: "text-gray-600",
-  textInput: "text-gray-900",
-  textMuted: "text-gray-500",
-  focusRing: "focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500",
-  fontSans: "font-sans",
-  fontMono: "font-mono",
-}; */
+import { useState } from "react";
+import Config from "./components/Config";
+import Header from "./components/Header";
+import ExecSpace from "./components/ExecSpace";
+import IDE from "./components/IDE";
+import type { FSAConfig, LBAConfig, PDAConfig, TMConfig } from "./models/interfaces/configs";
+import { useAutomataEngine } from "./hooks/useAutomataEngine";
 
 export const THEME = {
   bgApp: "bg-zinc-950",
@@ -46,119 +24,21 @@ export const THEME = {
 export type ThemeType = typeof THEME;
 
 export default function App() {
-  /**
-   * This section here is dedicated to state variables related to the ui, mainly the code, configuration, display states
-   * and button states related to Execute and Halt buttons **pause, next and previous to be added**
-   */
   const [code, setCode] = useState<string>('');
   const [showConfigWindow, SetShowConfigWindow] = useState(true);
-  const [showIde, setShowIde] = useState(false);
-  const [isExecuting, setIsExecuting] = useState<boolean>(false);
-  const [isHalted, setHalt] = useState<boolean>(false)
-  const [machineConfig, setMachineConfig] = useState<FSAConfig | PDAConfig | LBAConfig | TMConfig | null>(null)
+  const [showIde, setShowIde] = useState(true);
+  const [machineConfig, setMachineConfig] = useState<FSAConfig | PDAConfig | LBAConfig | TMConfig | null>(null);
 
-  /**
-   * Here we start declaring our references for every manager:
-   * 1- Parsing manager responsible for parsing code and generating definitions the engine needs
-   * 2- Execution manager: runs the engine and returns updated states in form of a SoA {activeStates, nextHeadPosition, currentTapeValue...}
-   * 3- UI manager: responsible for updating and setting the visuals, as well as saving copies of tapes at every step 
-   */
-  const executionManagerRef = useRef<ExecutionManager | null>(null);
-  const [activeTapes, setActiveTapes] = useState<ActiveTape[]>([]);
-  const uiManagerRef = useRef<UIManager | null>(null);
+  // Hook owns all engine instances and immutable state snapshots
+  const engine = useAutomataEngine();
 
-  useEffect(() => {
-    if (!uiManagerRef.current) {
-      uiManagerRef.current = new UIManager(setActiveTapes, 250); // default speed
-    }
-  }, []);
-
-  // registration callbacks
-  const handleRegisterTape = useCallback((id: string, handle: TapeHandle) => {
-    console.log("Registering tape:", id);
-    uiManagerRef.current?.registry.registerTapeHandle(id, handle);
-  }, [])
-
-  const handleUnregisterTape = useCallback((id: string) => {
-    uiManagerRef.current?.registry.unregisterTapeHandle(id);
-  }, [])
-
-  const handleExecute = (isJumpToResults: boolean, animationDelay: number, inputTape: string) => {
-    setHalt(false)
+  const handleExecute = (inputTape: string, animationDelay: number) => {
     if (!machineConfig || code.length === 0) {
       console.error("No machine config or code to parse");
       return;
     }
-
-    setIsExecuting(true)
-
-    // now we have our code, our config, all set we can proceed to the parsing manager
-
-    const parsingManager = new ParsingManager(machineConfig.machineType);
-    const definition = parsingManager.parseCode(machineConfig, code);
-
-    const execMgr = new ExecutionManager(machineConfig.machineType, inputTape, definition);
-    executionManagerRef.current = execMgr;
-
-    uiManagerRef.current?.controller.setAnimationDelay(animationDelay);
-
-    // Initial tape setup
-    const initialTape: ActiveTape = {
-      tapeValue: inputTape.split(""),
-      parentIndex: -1,
-      currentHeadPosition: 0,
-      stack: null,
-      id: ExecutionManager.assignId(),
-      index: 0,
-    };
-
-    uiManagerRef.current?.renderer.renderInitialTape(initialTape)
-    execMgr.setInitialTapeStates([initialTape])
-  }
-
-  useEffect(() => {
-    if (isHalted) {
-      console.log("Halting execution…");
-      uiManagerRef.current?.controller.pause();
-      setIsExecuting(false);
-      executionManagerRef.current = null;
-      // tapes remain visible, history intact
-    }
-  }, [isHalted]);
-
-useEffect(() => {
-  if (isExecuting && executionManagerRef.current && activeTapes.length > 0) {
-    let cancelled = false;
-    console.log("executing step")
-    const runStep = async () => {
-      if (
-        !cancelled &&
-        executionManagerRef.current?.hasNextStep() &&
-        !isHalted &&
-        uiManagerRef.current?.controller.isRunning()
-      ) {
-        await uiManagerRef.current!.controller.delay();
-
-        executionManagerRef.current!.runStep();
-        const newState = executionManagerRef.current!.getCurrentExecutionState();
-
-        uiManagerRef.current!.renderer.updateTapes(newState, uiManagerRef.current!.registry);
-
-        // schedule next step
-        runStep();
-        console.log("finished executing step")
-      } else {
-        setIsExecuting(false);
-      }
-    };
-
-    runStep();
-
-    return () => {
-      cancelled = true; // cleanup if component unmounts or deps change
-    };
-  }
-}, [isExecuting, isHalted, activeTapes]);
+    engine.execute(machineConfig, code, inputTape, animationDelay);
+  };
 
   return (
     <div className={`flex flex-col h-screen w-screen overflow-hidden ${THEME.bgApp} text-slate-100 ${THEME.fontSans}`}>
@@ -169,7 +49,20 @@ useEffect(() => {
         <section className={`w-[75%] h-full ${THEME.bgApp} ${THEME.border} border-r p-6 flex flex-col justify-start items-stretch gap-4 overflow-y-auto`}>
           {/* 1. Toolbar pinned at the top */}
           <div className="w-full shrink-0">
-            <ExecSpace theme={THEME} onExecute={handleExecute} isExecuting={isExecuting} setIsHalted={setHalt} activeTapes={activeTapes} onRegisterTape={handleRegisterTape} onUnregisterTape={handleUnregisterTape}/>
+            <ExecSpace
+              theme={THEME}
+              activeTapes={engine.activeTapes}
+              executionStatus={engine.executionStatus}
+              canStepBack={engine.canStepBack}
+              canStepForward={engine.canStepForward}
+              onExecute={handleExecute}
+              onStep={engine.step}
+              onRun={engine.run}
+              onPause={engine.pause}
+              onHalt={engine.halt}
+              onStepBack={engine.stepBack}
+              onStepForward={engine.stepForward}
+            />
           </div>
         </section>
 

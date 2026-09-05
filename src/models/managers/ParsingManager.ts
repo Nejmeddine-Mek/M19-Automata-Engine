@@ -33,7 +33,8 @@ export class ParsingManager{
                         ],
                         code,
                         tmConfig.right,
-                        tmConfig.left
+                        tmConfig.left,
+                        tmConfig.emptyTape
                     )
                     return tmParser.parseInstructions()
                 

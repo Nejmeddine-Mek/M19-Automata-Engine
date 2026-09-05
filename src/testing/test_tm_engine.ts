@@ -1,7 +1,7 @@
 import { Engine } from "../models/entities/Engine";
 import { TuringMachineParser } from "../models/entities/TuringMachineParser";
-import { ExecutionManager } from "../models/managers/ExecutionManager";
 import type { TMDefinition } from "../models/interfaces/TMDefinition";
+import { InstanceManager } from "../models/managers/executionSubClasses/InstanceManager";
 
 function test() {
     let isAccepted = false
@@ -14,7 +14,8 @@ function test() {
             "q0, *, D, q1"
         ].join("\n"),
         "D",
-        "G"
+        "G",
+        "⊔"
     );
 
     const def = parser.parseInstructions() as TMDefinition;
@@ -34,7 +35,7 @@ function test() {
         input[0] ?? "",
         0,
         def,
-        ExecutionManager.assignId()
+        InstanceManager.assignId()
     );
 
     let currentState = engine.getEngineState();
@@ -103,7 +104,7 @@ function test() {
 
         console.log("NEW HEAD POSITIONS:", headPositions);
         isAccepted = currentState.activeStates.some((state) =>
-            def.final.has(state)
+            def.finalStates.has(state)
         );
         if(isAccepted)
             break

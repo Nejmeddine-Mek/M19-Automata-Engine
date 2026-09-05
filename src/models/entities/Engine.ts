@@ -3,7 +3,7 @@ import type { FsaDefinition } from "../interfaces/FsaDefinition"
 import type { LBADefinition } from "../interfaces/LBADefinition"
 import type { PDADefinition } from "../interfaces/PDADefinition"
 import type { TMDefinition } from "../interfaces/TMDefinition"
-import { ExecutionManager } from "../managers/ExecutionManager"
+import { InstanceManager } from "../managers/executionSubClasses/InstanceManager"
 
 export interface EngineState{
     // NOTE: we might want to change this into an array to keep indexes clear
@@ -17,7 +17,7 @@ export interface EngineState{
         // meaning, we are only tracking each tape, by the value pointed at by the R/W head, and if any change happens, the Execution manager will update
         // the current index once it receives the new state
     headNextPosition: number[], // here is the next position of the head should be +1, 0, or -1 and nothing else
-    parentInstances: number[], // this works as a way to track instances and their children/parents 
+    parentInstancesIds: string[], // this works as a way to track instances and their children/parents 
     // such that element parentInstances[i] is the parent of the ith instance
     stackTops: (string | null)[] | null // this must strictly remain null if the machine type is not a Push Down automaton
     // thus, the constructor will always be defining it as null, and only when starting to execute, it is initialized to [] in we are dealing with a PDA
@@ -32,7 +32,7 @@ export class Engine{
     private idsList: string[]
     private headNextPosition: number[]
     private activeStates: string[]
-    private parentInstances: number[]
+    private parentInstancesIds: string[]
     private tapesCurrentValue: string[]
     private stackTops: (string | null)[] | null
     private halted: boolean = false;
@@ -44,7 +44,7 @@ export class Engine{
     public constructor(machineType: string){
         this.activeStates = []
         this.headNextPosition = []
-        this.parentInstances = []
+        this.parentInstancesIds = []
         this.tapesCurrentValue = []
         this.idsList = []
         this.stackTops = null
@@ -77,7 +77,7 @@ export class Engine{
     public setInitialTapeState(valueAtEntry: string, headNextPos: number, definition: FsaDefinition | TMDefinition | LBADefinition | PDADefinition, id: string){
         this.machineDefinition = definition
 
-        this.parentInstances.push(-1)
+        this.parentInstancesIds.push("thread-root")
         this.tapesCurrentValue.push(valueAtEntry)
         this.headNextPosition.push(headNextPos)
         this.idsList.push(id)
@@ -92,11 +92,12 @@ export class Engine{
     }
     // TODO: work more on this
     private FSAExec() {
+        console.log("tape cell values array to be processed: ", this.tapesCurrentValue)
         const fsa = this.machineDefinition as FsaDefinition;
         const newIdsList: string[] = []
         const newNextHeadPosition: number[] = [];
         const newActiveStates: string[] = [];
-        const newParentsIndices: number[] = [];
+        const newParentsIds: string[] = [];
         const newTapesCurrentValue: string[] = []; // Sync tape values for new instances
 
         for (let i = 0; i < this.activeStates.length; ++i) {
@@ -136,11 +137,11 @@ export class Engine{
                 if(nextStates){
                     for(let k = 0; k < nextStates.length; ++k){
                         if( k === 0 && j === 0){
-                            newParentsIndices.push(this.parentInstances[i])
+                            newParentsIds.push(this.parentInstancesIds[i])
                             newIdsList.push(this.idsList[i])
                         } else {
-                            newParentsIndices.push(i)
-                            newIdsList.push(ExecutionManager.assignId())
+                            newParentsIds.push(this.idsList[i])
+                            newIdsList.push(InstanceManager.assignId())
                         }
                         newActiveStates.push(nextStates[k])
                         newNextHeadPosition.push(nextPos)
@@ -155,7 +156,7 @@ export class Engine{
         this.idsList = newIdsList
         this.activeStates = newActiveStates;
         this.headNextPosition = newNextHeadPosition;
-        this.parentInstances = newParentsIndices;
+        this.parentInstancesIds = newParentsIds;
         this.tapesCurrentValue = newTapesCurrentValue;
         console.log(this.headNextPosition)
     }
@@ -174,11 +175,12 @@ export class Engine{
         const newIdsList: string[] = [];
         const newNextHeadPosition: number[] = [];
         const newActiveStates: string[] = [];
-        const newParentsIndices: number[] = [];
+        const newParentsIds: string[] = [];
         const newTapesCurrentValue: string[] = [];
-
+        console.log(this.getEngineState())
         // Consume the current symbol and spawn the next execution instances.
         for (let i = 0; i < this.activeStates.length; ++i) {
+
             const currentState = this.activeStates[i];
             const currentSymbol = this.tapesCurrentValue[i];
 
@@ -186,6 +188,7 @@ export class Engine{
             const innerMap = tm.stateTransitions.get(currentState);
 
             if (!innerMap) {
+                console.log("current state not in inner map: ", currentState)
                 // This branch has no outgoing transitions.
                 continue;
             }
@@ -194,6 +197,7 @@ export class Engine{
             const nextActions = innerMap.get(currentSymbol);
 
             if (!nextActions) {
+                console.log("reading unrecognized symbol: ", currentSymbol)
                 // This branch has no valid transition.
                 continue;
             }
@@ -235,10 +239,10 @@ export class Engine{
                 */
                 if (j === 0) {
                     newIdsList.push(this.idsList[i]);
-                    newParentsIndices.push(this.parentInstances[i]);
+                    newParentsIds.push(this.parentInstancesIds[i]);
                 } else {
-                    newIdsList.push(ExecutionManager.assignId());
-                    newParentsIndices.push(i);
+                    newIdsList.push(InstanceManager.assignId());
+                    newParentsIds.push(this.idsList[i]);
                 }
             }
         }
@@ -247,14 +251,14 @@ export class Engine{
         this.idsList = newIdsList;
         this.activeStates = newActiveStates;
         this.headNextPosition = newNextHeadPosition;
-        this.parentInstances = newParentsIndices;
+        this.parentInstancesIds = newParentsIds;
         this.tapesCurrentValue = newTapesCurrentValue;
 
         console.log({
             idsList: this.idsList,
             activeStates: this.activeStates,
             headMovements: this.headNextPosition,
-            parentInstances: this.parentInstances,
+            parentInstances: this.parentInstancesIds,
             tapeValues: this.tapesCurrentValue,
         });
     }
@@ -264,7 +268,7 @@ export class Engine{
         return {
             idsList: this.idsList,
             activeStates: this.activeStates,
-            parentInstances: this.parentInstances,
+            parentInstancesIds: this.parentInstancesIds,
             headNextPosition: this.headNextPosition,
             tapesCurrentValue: this.tapesCurrentValue,
             stackTops: this.stackTops,

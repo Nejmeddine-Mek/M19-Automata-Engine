@@ -1,16 +1,19 @@
 
-import { Engine, type EngineState } from "../entities/Engine";
-import type { ActiveTape } from "../interfaces/activeTapeConfigs";
+import { Engine } from "../entities/Engine";
+import type { ActiveTape, TapeStepChange } from "../interfaces/activeTapeConfigs";
 import type { FsaDefinition } from "../interfaces/FsaDefinition";
+
 import type { LBADefinition } from "../interfaces/LBADefinition";
 import type { PDADefinition } from "../interfaces/PDADefinition";
 import type { TMDefinition } from "../interfaces/TMDefinition";
 
+
+import { InstanceManager } from "./executionSubClasses/InstanceManager";
+
 export class ExecutionManager{
-    private stepsCount = 0;
-    private readonly MAX_STEPS = 1000000;
-    private activeInstances: Map<number | undefined, string>;
-    private initialTape: string;
+    public instanceManager: InstanceManager
+
+    public readonly initialTape: string;
     private definition: FsaDefinition | PDADefinition | LBADefinition | TMDefinition | null | undefined;
     private engine: Engine;
     private halted: boolean;
@@ -19,54 +22,57 @@ export class ExecutionManager{
     constructor(machineType: string, tape: string, definition: FsaDefinition | PDADefinition | LBADefinition | TMDefinition | null | undefined) {
         this.initialTape = tape;
         this.definition = definition;
-        this.activeInstances = new Map();
+
         this.engine = new Engine(machineType);
         this.halted = false;
+       // this.executionController = new ExecutionController()
+       // this.executionStateManager = new ExecutionStateManager()
+        this.instanceManager = new InstanceManager()
     }
 
-  public runStep(): void {
-    if (this.halted || this.stepsCount >= this.MAX_STEPS) return;
+    runStep(): TapeStepChange[] {
+      if (this.halted) return [];
 
-    this.engine.exec();
-    this.stepsCount++;
+      this.engine.exec();
+      const state = this.engine.getEngineState();
 
-    const engineState = this.engine.getEngineState();
-    if (!engineState || engineState.halted) {
-      this.halted = true;
+      if (!state || state.halted) {
+        this.halted = true;
+        return [];
+      }
+
+      // Build DTOs for each active tape
+      return state.idsList.map((id, i) => ({
+        id,
+        nextHeadPosition: state.headNextPosition[i],
+        currentTapeValue: state.tapesCurrentValue[i],
+        parentId: state.parentInstancesIds[i]
+      }));
     }
+
+  public setInitialTapeStates(initialTapeState: ActiveTape): void {
+      console.log(initialTapeState)
+      this.engine.setInitialTapeState(initialTapeState.tapeValue[initialTapeState.currentHeadPosition], initialTapeState.currentHeadPosition, this.definition!, initialTapeState.id)
   }
 
-  public setInitialTapeStates(initialTapeState: ActiveTape[]): void {
-    for (let i = 0; i < initialTapeState.length; ++i) {
-      this.activeInstances.set(initialTapeState[i].parentIndex, initialTapeState[i].id);
-      this.engine.setInitialTapeState(
-        initialTapeState[i].tapeValue[initialTapeState[i].currentHeadPosition],
-        0,
-        this.definition!,
-        initialTapeState[i].id
-      );
-    }
+  public getCurrentExecutionState(){
+      return this.engine.getEngineState()
+
   }
-    public getCurrentExecutionState(){
-        const engineState = this.engine.getEngineState()
-        const ids = []
-        console.log(this.activeInstances)
-        for(let  i = 0; i < engineState.parentInstances.length; ++i){
-            console.log("id: ", this.activeInstances.get(engineState.parentInstances[i]))
-            ids.push(this.activeInstances.get(engineState.parentInstances[i]))
-        }
-        return{
-            ...engineState,
-            ids: ids
-        }
+
+  public tapesAtFinalState(): Map<string, string>{
+    const finalStateIdSet: Map<string, string> = new Map()
+    const engineState = this.engine.getEngineState()
+    for(let i = 0; i < engineState.idsList.length; ++i){
+      if(this.definition?.finalStates.has(engineState.activeStates[i])){
+        finalStateIdSet.set(engineState.idsList[i], engineState.activeStates[i])
+      }
     }
 
-    public hasNextStep(): boolean {
-        return !this.halted && this.stepsCount < this.MAX_STEPS;
-    }
+    return finalStateIdSet
+  }
 
-    public static assignId(): string {
-        return `thread-${crypto.randomUUID()}`;
-    }
-
+  public setNewTapeCellValues(newTapeCellValues: string[]){
+    this.engine.setTapesValues(newTapeCellValues)
+  }
 }

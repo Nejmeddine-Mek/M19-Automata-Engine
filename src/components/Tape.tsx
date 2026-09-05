@@ -1,18 +1,14 @@
-import { useEffect, useState, forwardRef, useImperativeHandle, useRef, useMemo } from 'react';
 import type { ThemeType } from '../App';
-import type { TapeStepChange } from '../models/interfaces/activeTapeConfigs'
-import type { TapeHandle } from '../models/interfaces/TapeHandle';
 
 interface TapeProps {
   id: string;
   theme: ThemeType;
   index: number;
   parentIndex?: number;
-  initialTapeData: string[];
-  initialHeadPosition?: number;
-  animationSpeed: number;
-  onRegisterTape: (id: string, handle: TapeHandle) => void;
-  onUnregisterTape: (id: string) => void;
+  tapeData: string[];
+  headPosition?: number;
+  animationSpeed?: number;
+  status?: 'ACTIVE' | 'ACCEPTED' | 'REJECTED' | 'HALTED';
 }
 
 function getThreadColor(index: number, parentIndex?: number): { border: string; bg: string; text: string } {
@@ -30,114 +26,20 @@ function getThreadColor(index: number, parentIndex?: number): { border: string; 
   return hues[Math.abs(seed) % hues.length];
 }
 
-export const Tape = forwardRef<TapeHandle, TapeProps>(function Tape(
-  {
-    id,
-    theme,
-    index,
-    parentIndex,
-    initialTapeData,
-    initialHeadPosition = 0,
-    animationSpeed,
-    onRegisterTape,
-    onUnregisterTape,
-  },
-  ref
-) {
-  // --- 1. LOCAL STATE VARIABLES ---
-  const [tapeData, setTapeData] = useState<string[]>(
-    initialTapeData.length > 0 ? initialTapeData : ['⊔']
-  );
-  const [headPosition, setHeadPosition] = useState<number>(initialHeadPosition);
-
-  // Visual effect states
-  const [isWriting, setIsWriting] = useState<boolean>(false);
-  const [isMoving, setIsMoving] = useState<boolean>(false);
-  const [isRegenerating, setIsRegenerating] = useState<boolean>(false);
-
-  // Mutable ref prevents stale closure in writeSymbol
-  const headPosRef = useRef(headPosition);
-  headPosRef.current = headPosition;
-
+export default function Tape({
+  theme,
+  index,
+  parentIndex,
+  tapeData = ['⊔'],
+  headPosition = 0,
+  status = 'ACTIVE',
+}: TapeProps) {
   const accent = getThreadColor(index, parentIndex);
-
-  // --- 2. PASSIVE ATOMIC OPERATIONS ---
-
-  const writeSymbol = (symbol: string) => {
-    setTapeData((prev) => {
-      const next = [...prev];
-      next[headPosRef.current] = symbol;
-      return next;
-    });
-
-    setIsWriting(true);
-    setTimeout(() => setIsWriting(false), animationSpeed);
-  };
-
-  const moveHead = (direction: 'LEFT' | 'RIGHT' | 'HOLD') => {
-    if (direction === 'HOLD') return;
-
-    setHeadPosition((prev) => (direction === 'LEFT' ? prev - 1 : prev + 1));
-
-    setIsMoving(true);
-    setTimeout(() => setIsMoving(false), animationSpeed);
-  };
-
-  const updateTape = (newTape: string[], newHeadPosition: number) => {
-    setTapeData(newTape);
-    setHeadPosition(newHeadPosition);
-
-    setIsRegenerating(true);
-    setTimeout(() => setIsRegenerating(false), animationSpeed);
-  };
-
-  const applyStepChange = (stepChange: TapeStepChange) => {
-    if (stepChange.action === 'WRITE' && stepChange.writtenSymbol !== undefined) {
-      writeSymbol(stepChange.writtenSymbol);
-    } else if (stepChange.action === 'MOVE' && stepChange.direction) {
-      moveHead(stepChange.direction);
-    }
-  };
-
-  // --- 3. EXPOSE IMPERATIVE HANDLE ---
-
-  const handleAPI: TapeHandle = useMemo(
-    () => ({
-      writeSymbol,
-      moveHead,
-      updateTape,
-      applyStepChange,
-      getSnapshot: () => ({
-        tapeValue: tapeData,
-        currentHeadPosition: headPosition,
-      }),
-    }),
-    // Include dependencies so handleAPI stays fresh
-    [writeSymbol, moveHead, updateTape, applyStepChange, tapeData, headPosition]
-  )
-
-
-  useImperativeHandle(ref, () => handleAPI);
-
-  // --- 4. LIFECYCLE REGISTRATION ---
-
-  useEffect(() => {
-
-    onRegisterTape(id, handleAPI);
-
-    return () => {
-      onUnregisterTape(id);
-    };
-  }, [id, onRegisterTape, onUnregisterTape])
-
-  // --- 5. RENDER UI ---
+  const displayTape = tapeData.length > 0 ? tapeData : ['⊔'];
 
   return (
     <div 
-      className={`w-full flex flex-col p-3 ${theme.bgPanelInner} border ${theme.border} rounded-lg shadow-sm ${theme.fontSans} transition-all duration-200
-        ${isWriting ? 'ring-2 ring-amber-400/60' : ''}
-        ${isRegenerating ? 'ring-2 ring-emerald-400/60 scale-[1.01]' : ''}
-      `}
+      className={`w-full flex flex-col p-3 ${theme.bgPanelInner} border ${theme.border} rounded-lg shadow-sm ${theme.fontSans} transition-all duration-200`}
     >
       {/* Thread Metadata Header */}
       <div className="flex items-center justify-between mb-2 px-1">
@@ -150,6 +52,13 @@ export const Tape = forwardRef<TapeHandle, TapeProps>(function Tape(
               ← parent #{parentIndex}
             </span>
           )}
+          {status && status !== 'ACTIVE' && (
+            <span className={`px-1.5 py-0.5 text-[9px] font-bold ${theme.fontMono} rounded uppercase ${
+              status === 'ACCEPTED' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
+            }`}>
+              {status}
+            </span>
+          )}
         </div>
         <span className={`text-[11px] ${theme.fontMono} ${theme.textMuted}`}>
           Head Pos: <span className={`${theme.textInput} font-bold`}>{headPosition}</span>
@@ -159,7 +68,7 @@ export const Tape = forwardRef<TapeHandle, TapeProps>(function Tape(
       {/* Tape Cells */}
       <div className="relative flex flex-col items-center justify-center py-2 overflow-x-auto">
         <div className="flex items-center gap-1.5 px-4 py-1">
-          {tapeData.map((symbol, idx) => {
+          {displayTape.map((symbol, idx) => {
             const isHead = idx === headPosition;
 
             return (
@@ -168,14 +77,13 @@ export const Tape = forwardRef<TapeHandle, TapeProps>(function Tape(
                 className={`relative flex flex-col items-center justify-center w-10 h-11 rounded border transition-all duration-200 select-none
                   ${theme.fontMono} text-sm font-bold
                   ${isHead 
-                    ? `${accent.bg} ${accent.border} border-2 ${accent.text} shadow-sm z-10 
-                       ${isMoving ? 'scale-110 ring-2 ring-sky-400/50' : 'scale-105'}` 
+                    ? `${accent.bg} ${accent.border} border-2 ${accent.text} shadow-sm z-10 scale-105` 
                     : `${theme.bgInput} ${theme.borderSubtle} ${theme.textInput} opacity-80`
                   }`}
               >
                 {/* Pointer Arrow */}
                 {isHead && (
-                  <div className={`absolute -top-2 z-20 flex flex-col items-center transition-transform duration-150 ${isMoving ? '-translate-y-1' : ''}`}>
+                  <div className="absolute -top-2 z-20 flex flex-col items-center transition-transform duration-150">
                     <div className={`w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[6px] ${accent.text.replace('text-', 'border-t-')}`} />
                   </div>
                 )}
@@ -196,6 +104,4 @@ export const Tape = forwardRef<TapeHandle, TapeProps>(function Tape(
       </div>
     </div>
   );
-});
-
-export default Tape;
+}
