@@ -134,7 +134,8 @@ export class Engine{
 
             for(let j = 0; j < resolvedActiveStatesList.length; ++j){
                 const nextStates = fsa.stateTransition.get(resolvedActiveStatesList[j])?.get(currentSymbol)
-                if(nextStates){
+                console.log("STATE: ", this.activeStates[i],currentSymbol,"next states: ", nextStates)
+                if(nextStates !== undefined){
                     for(let k = 0; k < nextStates.length; ++k){
                         if( k === 0 && j === 0){
                             newParentsIds.push(this.parentInstancesIds[i])
@@ -164,7 +165,9 @@ export class Engine{
 
 
     private PDAExec(){
-
+        /**
+         * TO BE DONE...
+         */
     }
     private LBAExec(){
 
@@ -276,6 +279,7 @@ export class Engine{
 
         }
     }
+    
     public setTapesValues(tapesValues: string[]){
         this.tapesCurrentValue = tapesValues
     }

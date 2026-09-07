@@ -23,7 +23,7 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
   // LBA Specific
   const [leftBoundSymbol, setLeftBoundSymbol] = useState('<');
   const [rightBoundSymbol, setRightBoundSymbol] = useState('>');
-
+  const [auxiliaryAlphabet, setAuxiliaryAlphabet] = useState('x, y')
   // TM Specific
   const [blankSymbol, setBlankSymbol] = useState('⊔');
   const [rightSymbol, setRightSymbol] = useState('R')
@@ -51,8 +51,24 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
         })
         break
       case 'LBA':
+        const parsedAuxAlphabet = auxiliaryAlphabet.split(',').map(letter => letter.trim())
+        const lba: LBAConfig = {
+          machineType: 'LBA',
+          alphabet: parsedLetters,
+          auxiliaryAlphabet: parsedAuxAlphabet,
+          startSymbol: leftBoundSymbol,
+          endSymbol: rightBoundSymbol,
+          right: rightSymbol,
+          left: leftSymbol
+        }
+        console.log(lba)
         onChangeConfig(        {
-          machineType: 'LBA'
+          machineType: 'LBA',
+          alphabet: parsedLetters,
+          startSymbol: leftBoundSymbol,
+          endSymbol: rightBoundSymbol,
+          right: rightSymbol,
+          left: leftSymbol
         })
         break
       case 'TM':
@@ -119,31 +135,80 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
 
       case 'LBA':
         return (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col gap-2">
+            {/* Auxiliary Alphabet */}
             <div className="flex flex-col gap-1">
               <label className={`text-[11px] font-medium ${theme.textTitle}`}>
-                Left Marker (⊏)
+                Auxiliary Alphabet
               </label>
               <input
                 type="text"
-                value={leftBoundSymbol}
-                onChange={(e) => setLeftBoundSymbol(e.target.value)}
+                value={auxiliaryAlphabet}
+                onChange={(e) => setAuxiliaryAlphabet(e.target.value)}
+                placeholder="e.g. x, y"
                 className={`px-2.5 py-1.5 ${theme.bgInput} ${theme.border} ${theme.textInput} border rounded-md text-xs font-mono outline-none ${theme.focusRing}`}
               />
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className={`text-[11px] font-medium ${theme.textTitle}`}>
-                Right Marker (⊐)
-              </label>
-              <input
-                type="text"
-                value={rightBoundSymbol}
-                onChange={(e) => setRightBoundSymbol(e.target.value)}
-                className={`px-2.5 py-1.5 ${theme.bgInput} ${theme.border} ${theme.textInput} border rounded-md text-xs font-mono outline-none ${theme.focusRing}`}
-              />
+            {/* Left & Right Markers */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex flex-col gap-1">
+                <label className={`text-[11px] font-medium ${theme.textTitle}`}>
+                  Left Marker (⊏)
+                </label>
+                <input
+                  type="text"
+                  value={leftBoundSymbol}
+                  onChange={(e) => setLeftBoundSymbol(e.target.value)}
+                  className={`px-2.5 py-1.5 ${theme.bgInput} ${theme.border} ${theme.textInput} border rounded-md text-xs font-mono outline-none ${theme.focusRing}`}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className={`text-[11px] font-medium ${theme.textTitle}`}>
+                  Right Marker (⊐)
+                </label>
+                <input
+                  type="text"
+                  value={rightBoundSymbol}
+                  onChange={(e) => setRightBoundSymbol(e.target.value)}
+                  className={`px-2.5 py-1.5 ${theme.bgInput} ${theme.border} ${theme.textInput} border rounded-md text-xs font-mono outline-none ${theme.focusRing}`}
+                />
+              </div>
+            </div>
+
+            {/* Right & Left Movement Symbols */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex flex-col gap-1">
+                <label className={`text-[11px] font-medium ${theme.textTitle}`}>
+                  Right Symbol (R)
+                </label>
+                <input
+                  type="text"
+                  maxLength={1}
+                  value={rightSymbol}
+                  onChange={(e) => setRightSymbol(e.target.value)}
+                  placeholder="R"
+                  className={`px-2.5 py-1.5 ${theme.bgInput} ${theme.border} ${theme.textInput} border rounded-md text-xs font-mono outline-none ${theme.focusRing}`}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className={`text-[11px] font-medium ${theme.textTitle}`}>
+                  Left Symbol (L)
+                </label>
+                <input
+                  type="text"
+                  maxLength={1}
+                  value={leftSymbol}
+                  onChange={(e) => setLeftSymbol(e.target.value)}
+                  placeholder="L"
+                  className={`px-2.5 py-1.5 ${theme.bgInput} ${theme.border} ${theme.textInput} border rounded-md text-xs font-mono outline-none ${theme.focusRing}`}
+                />
+              </div>
             </div>
           </div>
+          
         );
         case 'TM':
           return (

@@ -13,6 +13,12 @@ export interface TMConfig{
 }
 export interface LBAConfig{
     machineType: string
+    alphabet: string[]
+    auxiliaryAlphabet: string[]
+    startSymbol: string
+    endSymbol: string
+    right: string
+    left: string
 }
 export interface PDAConfig{
     machineType: string

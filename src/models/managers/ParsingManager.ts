@@ -1,5 +1,6 @@
 
 import { FSAParser } from "../entities/FSAParser";
+import { LBAParser } from "../entities/LBAParser";
 import { TuringMachineParser } from "../entities/TuringMachineParser";
 import type { FSAConfig, LBAConfig, PDAConfig, TMConfig } from "../interfaces/configs";
 
@@ -24,7 +25,19 @@ export class ParsingManager{
                 case 'PDA':
                     return null
                 case 'LBA':
-                    return null
+                    const lbaConfig = machineType as LBAConfig
+                    const lbaParser = new LBAParser(
+                        [...lbaConfig.alphabet,
+                            lbaConfig.endSymbol,
+                            lbaConfig.startSymbol,
+                            lbaConfig.right,
+                            lbaConfig.left],
+                            lbaConfig.startSymbol,
+                            lbaConfig.endSymbol,
+                            lbaConfig.right,
+                            lbaConfig.left
+                        )
+                    return lbaParser.parseInstructions(code) 
                 case 'TM':
                     const tmConfig = machineType as TMConfig
                     const tmParser = new TuringMachineParser(

@@ -7,6 +7,7 @@ interface TapeProps {
   parentIndex?: number;
   tapeData: string[];
   headPosition?: number;
+  currentState?: string;
   animationSpeed?: number;
   status?: 'ACTIVE' | 'ACCEPTED' | 'REJECTED' | 'HALTED';
 }
@@ -32,6 +33,7 @@ export default function Tape({
   parentIndex,
   tapeData = ['⊔'],
   headPosition = 0,
+  currentState,
   status = 'ACTIVE',
 }: TapeProps) {
   const accent = getThreadColor(index, parentIndex);
@@ -50,6 +52,11 @@ export default function Tape({
           {parentIndex !== undefined && (
             <span className={`text-[11px] ${theme.fontMono} ${theme.textMuted}`}>
               ← parent #{parentIndex}
+            </span>
+          )}
+          {currentState && (
+            <span className={`px-2 py-0.5 text-[10px] font-bold ${theme.fontMono} rounded bg-zinc-800/90 border border-zinc-700 text-cyan-400 shadow-xs`}>
+              State: <span className="text-zinc-100">{currentState}</span>
             </span>
           )}
           {status && status !== 'ACTIVE' && (

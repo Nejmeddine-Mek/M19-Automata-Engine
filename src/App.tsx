@@ -53,6 +53,7 @@ export default function App() {
               theme={THEME}
               activeTapes={engine.activeTapes}
               executionStatus={engine.executionStatus}
+              machineDefinition={engine.machineDefinition}
               canStepBack={engine.canStepBack}
               canStepForward={engine.canStepForward}
               onExecute={handleExecute}

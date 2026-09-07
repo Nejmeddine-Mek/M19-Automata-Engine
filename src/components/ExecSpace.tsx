@@ -3,6 +3,11 @@ import type { ActiveTape } from '../models/interfaces/activeTapeConfigs';
 import type { ExecutionStatus } from '../models/interfaces/executionStatus';
 import Tape from './Tape';
 import Stack from './Stack';
+import FSAGraph from './FSAGraph';
+import type { FsaDefinition } from '../models/interfaces/FsaDefinition';
+import type { PDADefinition } from '../models/interfaces/PDADefinition';
+import type { LBADefinition } from '../models/interfaces/LBADefinition';
+import type { TMDefinition } from '../models/interfaces/TMDefinition';
 
 export interface ThemeConfig {
   bgApp: string;
@@ -23,6 +28,7 @@ interface ExecSpaceProps {
   theme: ThemeConfig;
   activeTapes: ActiveTape[];
   executionStatus: ExecutionStatus;
+  machineDefinition?: FsaDefinition | PDADefinition | LBADefinition | TMDefinition | null;
   canStepBack: boolean;
   canStepForward: boolean;
   onExecute: (inputTape: string, animationDelay: number) => void;
@@ -38,6 +44,7 @@ export function ExecSpace({
   theme,
   activeTapes,
   executionStatus,
+  machineDefinition,
   canStepBack,
   canStepForward,
   onExecute,
@@ -49,7 +56,8 @@ export function ExecSpace({
   onStepForward,
 }: ExecSpaceProps) {
   const [inputArg, setInputArg] = useState<string>('');
-  const [animSpeed, setAnimSpeed] = useState<number>(250); // Speed in ms
+  const [animSpeed, setAnimSpeed] = useState<number>(800); // Speed in ms
+  const [showDiagram, setShowDiagram] = useState<boolean>(true);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -178,6 +186,19 @@ export function ExecSpace({
           >
             Halt
           </button>
+
+          {/* Diagram Toggle Button */}
+          {machineDefinition && 'epsilon' in machineDefinition && (
+            <button
+              type="button"
+              onClick={() => setShowDiagram(!showDiagram)}
+              className={`px-3 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider rounded transition-all shadow-sm cursor-pointer ${
+                showDiagram ? 'bg-cyan-600 text-white hover:bg-cyan-500' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+              }`}
+            >
+              {showDiagram ? 'Hide Diagram' : 'Show Diagram'}
+            </button>
+          )}
         </div>
       </form>
 
@@ -196,7 +217,17 @@ export function ExecSpace({
       )}
 
       {/* 2. Visualizer Workspace */}
-      <div className={`flex-1 w-full ${theme.bgPanelInner} border ${theme.border} rounded-lg p-6 flex items-center justify-center shadow-sm`}>
+      <div className={`flex-1 w-full ${theme.bgPanelInner} border ${theme.border} rounded-lg p-6 flex flex-col gap-6 items-center justify-start shadow-sm overflow-y-auto`}>
+        {/* FSA State Transition Diagram */}
+        {showDiagram && machineDefinition && 'epsilon' in machineDefinition && (
+          <div className="w-full">
+            <FSAGraph
+              definition={machineDefinition as FsaDefinition}
+              activeStates={activeTapes.map((t) => t.currentState).filter(Boolean) as string[]}
+              theme={theme}
+            />
+          </div>
+        )}
         {activeTapes && activeTapes.length > 0 ? (
           <div className="flex flex-col gap-4 w-full h-full justify-start">
             {activeTapes.map((tape: ActiveTape) => {
@@ -214,6 +245,7 @@ export function ExecSpace({
                       parentIndex={parentIndex}
                       tapeData={tape.tapeValue}
                       headPosition={tape.currentHeadPosition}
+                      currentState={tape.currentState}
                       status={tape.status}
                       animationSpeed={animSpeed}
                     />

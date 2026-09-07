@@ -14,6 +14,7 @@ export function applyChanges(
         ...existing,
         tapeValue: [...existing.tapeValue],
         index: result.length,
+        currentState: change.currentState ?? existing.currentState,
       };
 
       if (change.nextHeadPosition === 1) {
@@ -47,6 +48,7 @@ export function applyChanges(
         parentId: change.parentId,
         tapeValue,
         currentHeadPosition: headPos,
+        currentState: change.currentState ?? parent?.currentState,
         status: "ACTIVE",
         blankSymbol: parent ? parent.blankSymbol : null,
         stack: parent && parent.stack ? [...parent.stack] : null,
@@ -56,4 +58,3 @@ export function applyChanges(
 
   return result;
 }
-

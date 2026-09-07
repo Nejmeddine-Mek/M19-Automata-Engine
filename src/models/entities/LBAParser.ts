@@ -1,4 +1,4 @@
-import type { ActionTransition } from "../interfaces/LBADefinition"
+import type { ActionTransition, LBADefinition } from "../interfaces/LBADefinition"
 import CleaningService from "../services/CleaningService"
 import { containsForbiddenChar } from "../services/ForbiddenCharactersCheck"
 //-----------------------------------------------------------------
@@ -11,13 +11,19 @@ export class LBAParser{
  private readonly COMMA = ","
 
  private alphabet: Set<string>
-private epsilon: string
- public constructor(alphabet: string[], epsilon: string){
+ private beginningSymbol: string
+ private endSymbol: string
+ private rightSymbol: string
+ private leftSymbol: string
+ public constructor(alphabet: string[], beginningSymbol: string, endSymbol: string, rightSymbol: string, leftSymbol: string){
     this.alphabet = new Set(alphabet)
-    this.epsilon = epsilon
+    this.beginningSymbol = beginningSymbol
+    this.endSymbol = endSymbol
+    this.rightSymbol = rightSymbol
+    this.leftSymbol = leftSymbol
  }
 
- public parseInstructions(code: string){
+ public parseInstructions(code: string): LBADefinition | null{
     const cleanedCode = CleaningService(code)
     if(cleanedCode.length === 0)
         return null
@@ -65,30 +71,41 @@ private epsilon: string
         lineTokens = cleanedCode[i].split(this.COMMA)
         if(lineTokens.length !== 4){
             // TODO: inst format not respected err
+            console.log("format mismatch")
             return null
         }
         let stateInnerMap: Map<string, ActionTransition>  = instructions.get(lineTokens[0]) || new Map<string, ActionTransition>()
-        if(!this.alphabet.has(lineTokens[1]) && lineTokens[1] !== this.epsilon){
+        if(!this.alphabet.has(lineTokens[1].trim())){
             // TODO: throw an error, symbol does not belong to alphabet
             console.log("letter not in alphabet")
             return null
         }
-        let currentAction: ActionTransition = stateInnerMap.get(lineTokens[1]) || {action: [], nextStates: []}
-        if(!this.alphabet.has(lineTokens[2]) /* || moveSymbols.has(lineTokens[2]) */){
+        let currentAction: ActionTransition = stateInnerMap.get(lineTokens[1].trim()) || {action: [], nextStates: []}
+        if(!this.alphabet.has(lineTokens[2].trim()) /* || moveSymbols.has(lineTokens[2]) */){
             //TODO: unrecognized symbol, error
-            console.log(lineTokens[2] ," not recognised")
+            console.log(lineTokens[2] ," not recognized")
             return null
         }
         // fill the actions object
-        currentAction.action.push(lineTokens[2])
-        currentAction.nextStates.push(lineTokens[3])
+        currentAction.action.push(lineTokens[2].trim())
+        currentAction.nextStates.push(lineTokens[3].trim())
         // fill the state map
-        stateInnerMap.set(lineTokens[1],currentAction)
+        stateInnerMap.set(lineTokens[1].trim(),currentAction)
         // add the states map to the instructions map
-        instructions.set(lineTokens[0],stateInnerMap)
+        instructions.set(lineTokens[0].trim(),stateInnerMap)
             
     }
     console.log(initialState, finalStates, instructions);
+    return{
+        initial: initialState,
+        finalStates: finalStates,
+        beginningSymbol: this.beginningSymbol,
+        endSymbol: this.endSymbol,
+        rightSymbol: this.rightSymbol,
+        leftSymbol: this.leftSymbol,
+        stateTransition: instructions
+        
+    }
  }
 
 }

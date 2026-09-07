@@ -9,6 +9,9 @@ import { HistoryManager } from "../models/managers/uiSubClasses/HistoryManager";
 import { InstanceManager } from "../models/managers/executionSubClasses/InstanceManager";
 import { applyChanges } from "./applyChanges";
 import { computeEOI } from "./computeEOI";
+import type { FsaDefinition } from "../models/interfaces/FsaDefinition";
+import type { PDADefinition } from "../models/interfaces/PDADefinition";
+import type { LBADefinition } from "../models/interfaces/LBADefinition";
 
 export interface EngineAPI {
   // ── Immutable State (read-only by React) ──────────────────
@@ -16,6 +19,7 @@ export interface EngineAPI {
   executionStatus: ExecutionStatus;    // { isExecuting, isHalted, isAccepted, isRejected, stepCount }
   canStepBack: boolean;                // History has previous states
   canStepForward: boolean;             // History has future states
+  machineDefinition: FsaDefinition | PDADefinition | LBADefinition | TMDefinition | null;              // Parsed machine definition object
 
   // ── Actions (called by React event handlers) ──────────────
   execute: (config: FSAConfig | PDAConfig | LBAConfig | TMConfig, code: string, input: string, animationDelay: number) => void;
@@ -30,6 +34,7 @@ export interface EngineAPI {
 
 export function useAutomataEngine(): EngineAPI {
   const [activeTapes, setActiveTapes] = useState<ActiveTape[]>([]);
+  const [machineDefinition, setMachineDefinition] = useState<any>(null);
   const [executionStatus, setExecutionStatus] = useState<ExecutionStatus>({
     isExecuting: false,
     isHalted: false,
@@ -153,7 +158,7 @@ export function useAutomataEngine(): EngineAPI {
 
       const parsingManager = new ParsingManager(config.machineType);
       const definition = parsingManager.parseCode(config, code);
-      console.log(definition)
+      setMachineDefinition(definition);
       const execMgr = new ExecutionManager(config.machineType, input, definition);
       executionManagerRef.current = execMgr;
 
@@ -163,6 +168,7 @@ export function useAutomataEngine(): EngineAPI {
         tapeValue: input.split(""),
         parentId: "thread-root",
         currentHeadPosition: 0,
+        currentState: (definition as any)?.initial,
         stack: null,
         id: InstanceManager.assignId(),
         index: 0,
@@ -180,6 +186,9 @@ export function useAutomataEngine(): EngineAPI {
           tmDef.blankSymbol.repeat(8)
         ).split("");
         initialTape.currentHeadPosition = 8;
+      } else if(config.machineType === 'LBA'){
+        const lbaDef = definition as LBADefinition;
+        initialTape.tapeValue = (lbaDef.beginningSymbol + input + lbaDef.endSymbol).split("")
       }
 
       execMgr.setInitialTapeStates(initialTape);
@@ -205,6 +214,7 @@ export function useAutomataEngine(): EngineAPI {
     executionManagerRef.current = null;
     historyRef.current.reset();
     setActiveTapes([]);
+    setMachineDefinition(null);
     updateHistoryState();
     setExecutionStatus({
       isExecuting: false,
@@ -245,6 +255,7 @@ export function useAutomataEngine(): EngineAPI {
   return {
     activeTapes,
     executionStatus,
+    machineDefinition,
     canStepBack: historyState.canStepBack,
     canStepForward: historyState.canStepForward,
     execute,

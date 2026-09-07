@@ -46,7 +46,8 @@ export class ExecutionManager{
         id,
         nextHeadPosition: state.headNextPosition[i],
         currentTapeValue: state.tapesCurrentValue[i],
-        parentId: state.parentInstancesIds[i]
+        parentId: state.parentInstancesIds[i],
+        currentState: state.activeStates[i]
       }));
     }
 

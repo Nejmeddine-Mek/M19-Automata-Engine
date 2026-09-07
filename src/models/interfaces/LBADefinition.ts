@@ -3,6 +3,8 @@ export interface LBADefinition{
     finalStates: Set<string>,
     beginningSymbol: string,
     endSymbol: string,
+    rightSymbol: string,
+    leftSymbol: string,
     stateTransition: Map<string, ActionTransition>
 
 }
