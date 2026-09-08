@@ -92,6 +92,112 @@ export default function FSAGraph({ definition, activeStates = [], theme }: FSAGr
     setDraggingNode(null);
   };
 
+  const handleSavePNG = () => {
+    if (!svgRef.current) return;
+
+    // Clone the SVG DOM element so the live interface is unaffected
+    const clonedSvg = svgRef.current.cloneNode(true) as SVGSVGElement;
+
+    // Remove all glowing/pulsing animation elements
+    const pingElements = clonedSvg.querySelectorAll(".animate-ping");
+    pingElements.forEach((el) => el.remove());
+
+    // Convert colors for clean high-contrast print mode (white fill, black strokes & text)
+    // 1. Markers (arrowheads)
+    clonedSvg.querySelectorAll("marker path").forEach((el) => {
+      el.setAttribute("fill", "#000000");
+    });
+
+    // 2. Lines & Paths (edges & start arrow line)
+    clonedSvg.querySelectorAll("path, line").forEach((el) => {
+      if (el.getAttribute("stroke")) {
+        el.setAttribute("stroke", "#000000");
+      }
+    });
+
+    // 3. Node Circles & Accept state inner rings
+    clonedSvg.querySelectorAll("circle").forEach((el) => {
+      const isRing = el.getAttribute("fill") === "none";
+      if (isRing) {
+        el.setAttribute("stroke", "#000000");
+      } else {
+        el.setAttribute("fill", "#ffffff");
+        el.setAttribute("stroke", "#000000");
+        el.setAttribute("stroke-width", "2");
+      }
+    });
+
+    // 4. Edge Label Background Rectangles
+    clonedSvg.querySelectorAll("rect").forEach((el) => {
+      el.setAttribute("fill", "#ffffff");
+      el.setAttribute("stroke", "#ffffff");
+    });
+
+    // 5. Text elements (labels, node IDs, Start indicator)
+    clonedSvg.querySelectorAll("text").forEach((el) => {
+      el.setAttribute("fill", "#000000");
+      el.removeAttribute("class");
+      el.setAttribute(
+        "style",
+        "font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-weight: 700; fill: #000000;"
+      );
+    });
+
+    // Inject explicit font styles into cloned SVG defs for accurate canvas rasterization
+    let defs = clonedSvg.querySelector("defs");
+    if (!defs) {
+      defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+      clonedSvg.insertBefore(defs, clonedSvg.firstChild);
+    }
+    const styleEl = document.createElementNS("http://www.w3.org/2000/svg", "style");
+    styleEl.textContent = `
+      text { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-weight: 700; fill: #000000 !important; }
+    `;
+    defs.appendChild(styleEl);
+
+    // Set standard SVG attributes for standalone rendering
+    clonedSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    clonedSvg.setAttribute("width", "600");
+    clonedSvg.setAttribute("height", "320");
+
+    const svgString = new XMLSerializer().serializeToString(clonedSvg);
+    const svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(svgBlob);
+
+    const img = new Image();
+    img.onload = () => {
+      // Scale canvas 2x for sharp, high-resolution rendering
+      const scale = 2;
+      const width = 600;
+      const height = 320;
+      const canvas = document.createElement("canvas");
+      canvas.width = width * scale;
+      canvas.height = height * scale;
+      const ctx = canvas.getContext("2d");
+
+      if (ctx) {
+        ctx.scale(scale, scale);
+
+        // Fill clean white background ideal for practice exercises and exams
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const pngUrl = canvas.toDataURL("image/png");
+        const downloadLink = document.createElement("a");
+        downloadLink.href = pngUrl;
+        downloadLink.download = "fsa_graph.png";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      }
+      URL.revokeObjectURL(url);
+    };
+
+    img.src = url;
+  };
+
   if (!definition) {
     return (
       <div className={`w-full h-64 flex items-center justify-center ${theme.fontMono} ${theme.textMuted} border ${theme.borderSubtle} rounded-lg ${theme.bgPanelInner}`}>
@@ -130,9 +236,21 @@ export default function FSAGraph({ definition, activeStates = [], theme }: FSAGr
         <span className={`text-xs font-bold uppercase tracking-wider ${theme.fontMono} ${theme.textTitle}`}>
           ⚙️ FSA State Transition Diagram
         </span>
-        <span className={`text-[10px] ${theme.fontMono} ${theme.textMuted}`}>
-          Drag nodes to reposition
-        </span>
+        <div className="flex items-center gap-3">
+          <span className={`text-[10px] ${theme.fontMono} ${theme.textMuted}`}>
+            Drag nodes to reposition
+          </span>
+          <button
+            onClick={handleSavePNG}
+            className={`px-2 py-1 text-[11px] font-medium rounded flex items-center gap-1.5 transition-colors border ${theme.border} ${theme.textTitle} hover:border-sky-500 hover:text-sky-400`}
+            title="Save graph as PNG (glow effects removed)"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Save PNG
+          </button>
+        </div>
       </div>
 
       <svg
