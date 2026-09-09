@@ -6,6 +6,7 @@ interface FSAGraphProps {
   definition: FsaDefinition | null;
   activeStates?: string[];
   theme: ThemeType;
+  language?: "en" | "fr";
 }
 
 interface NodePos {
@@ -20,10 +21,12 @@ interface Edge {
   labels: string[];
 }
 
-export default function FSAGraph({ definition, activeStates = [], theme }: FSAGraphProps) {
+export default function FSAGraph({ definition, activeStates = [], theme, language = "en" }: FSAGraphProps) {
   const [nodePositions, setNodePositions] = useState<Map<string, NodePos>>(new Map());
   const [draggingNode, setDraggingNode] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
+
+  const isFr = language === "fr";
 
   // Compute node positions and transition edges whenever definition changes
   useEffect(() => {
@@ -201,7 +204,7 @@ export default function FSAGraph({ definition, activeStates = [], theme }: FSAGr
   if (!definition) {
     return (
       <div className={`w-full h-64 flex items-center justify-center ${theme.fontMono} ${theme.textMuted} border ${theme.borderSubtle} rounded-lg ${theme.bgPanelInner}`}>
-        No FSA definition loaded for diagram visualization.
+        {isFr ? "Aucune définition FSA chargée pour la visualisation du diagramme." : "No FSA definition loaded for diagram visualization."}
       </div>
     );
   }
@@ -234,21 +237,21 @@ export default function FSAGraph({ definition, activeStates = [], theme }: FSAGr
     <div className={`w-full flex flex-col items-center justify-center p-3 border ${theme.border} rounded-lg ${theme.bgPanelInner} shadow-sm select-none`}>
       <div className="flex items-center justify-between w-full mb-1 px-2">
         <span className={`text-xs font-bold uppercase tracking-wider ${theme.fontMono} ${theme.textTitle}`}>
-          ⚙️ FSA State Transition Diagram
+          {isFr ? "⚙️ Diagramme de Transitions d'États FSA" : "⚙️ FSA State Transition Diagram"}
         </span>
         <div className="flex items-center gap-3">
           <span className={`text-[10px] ${theme.fontMono} ${theme.textMuted}`}>
-            Drag nodes to reposition
+            {isFr ? "Glisser les nœuds pour repositionner" : "Drag nodes to reposition"}
           </span>
           <button
             onClick={handleSavePNG}
             className={`px-2 py-1 text-[11px] font-medium rounded flex items-center gap-1.5 transition-colors border ${theme.border} ${theme.textTitle} hover:border-sky-500 hover:text-sky-400`}
-            title="Save graph as PNG (glow effects removed)"
+            title={isFr ? "Enregistrer sous forme d'image PNG" : "Save graph as PNG"}
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            Save PNG
+            {isFr ? "Enregistrer PNG" : "Save PNG"}
           </button>
         </div>
       </div>
@@ -410,7 +413,7 @@ export default function FSAGraph({ definition, activeStates = [], theme }: FSAGr
                     y="-6"
                     className="font-mono text-[9px] font-bold fill-sky-400 uppercase"
                   >
-                    Start
+                    {isFr ? "Début" : "Start"}
                   </text>
                 </g>
               )}

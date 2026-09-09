@@ -69,6 +69,7 @@ export class FSAParser{
         // PROCESS INSTRUCTIONS ---------------
         // NOW WE GO THROUGH WHAT'S LEFT, AND ADD INTO THE MASTER OBJECT AS FOLLOWS
         const instructions: Map<string, Map<string,string[]>> = new Map()
+        let maxEntryLength = 1;
 
         for(let i = 2; i < cleanedCode.length; ++i){
             lineTokens = cleanedCode[i].split(this.COMMA).map(token => token.trim())
@@ -87,12 +88,17 @@ export class FSAParser{
                 stateInnerMap = new Map()
             }
             const symbol = lineTokens[1];
-            const isValidSymbol = this.Alphabet.has(symbol) || symbol === this.epsilon;
+            const isValidSymbol = symbol === this.epsilon || symbol.split("").every(ch => this.Alphabet.has(ch));
 
             if (!isValidSymbol) {
                 // TODO: Symbol not in alphabet or valid epsilon
                 return null;
             }
+
+            if (symbol !== this.epsilon) {
+                maxEntryLength = Math.max(maxEntryLength, symbol.length);
+            }
+
             let nextStates: string[] = stateInnerMap.get(lineTokens[1]) || []
 
             nextStates.push(lineTokens[2])
@@ -105,7 +111,8 @@ export class FSAParser{
         initial: initialState,
         finalStates: finalStates,
         stateTransition: instructions,
-        epsilon: this.epsilon
+        epsilon: this.epsilon,
+        maxEntryLength: maxEntryLength
        }
     }
 

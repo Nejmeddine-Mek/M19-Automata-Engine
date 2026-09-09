@@ -6,11 +6,14 @@ export type AutomatonType = 'TM' | 'LBA' | 'PDA' | 'FSA';
 
 interface ConfigProps {
   theme: ThemeType; // Replace with your actual theme type
-  onChangeConfig: (config: FSAConfig | PDAConfig | LBAConfig | TMConfig | null) => void
+  language?: "en" | "fr";
+  onChangeConfig: (config: FSAConfig | PDAConfig | LBAConfig | TMConfig | null) => void;
 }
 
-export default function Config({ theme, onChangeConfig }: ConfigProps) {
+export default function Config({ theme, language = "en", onChangeConfig }: ConfigProps) {
   const [selectedType, setSelectedType] = useState<AutomatonType>('FSA');
+
+  const isFr = language === "fr";
 
   // Shared Engine Config
   const [alphabet, setAlphabet] = useState('a, b, c');
@@ -93,7 +96,7 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
             {/* Epsilon Notation */}
             <div className="flex flex-col gap-1">
               <label className={`text-[11px] font-medium ${theme.textTitle}`}>
-                Epsilon Symbol (ε)
+                {isFr ? "Symbole Epsilon (ε)" : "Epsilon Symbol (ε)"}
               </label>
               <input
                 type="text"
@@ -109,7 +112,7 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
           <>
             <div className="flex flex-col gap-1">
               <label className={`text-[11px] font-medium ${theme.textTitle}`}>
-                Initial Stack Symbol (Z₀)
+                {isFr ? "Symbole Initial de Pile (Z₀)" : "Initial Stack Symbol (Z₀)"}
               </label>
               <input
                 type="text"
@@ -121,7 +124,7 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
 
             <div className="flex flex-col gap-1">
               <label className={`text-[11px] font-medium ${theme.textTitle}`}>
-                Stack Alphabet (Γ)
+                {isFr ? "Alphabet de Pile (Γ)" : "Stack Alphabet (Γ)"}
               </label>
               <input
                 type="text"
@@ -139,7 +142,7 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
             {/* Auxiliary Alphabet */}
             <div className="flex flex-col gap-1">
               <label className={`text-[11px] font-medium ${theme.textTitle}`}>
-                Auxiliary Alphabet
+                {isFr ? "Alphabet Auxiliaire" : "Auxiliary Alphabet"}
               </label>
               <input
                 type="text"
@@ -154,7 +157,7 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
             <div className="grid grid-cols-2 gap-2">
               <div className="flex flex-col gap-1">
                 <label className={`text-[11px] font-medium ${theme.textTitle}`}>
-                  Left Marker (⊏)
+                  {isFr ? "Marqueur Gauche (⊏)" : "Left Marker (⊏)"}
                 </label>
                 <input
                   type="text"
@@ -166,7 +169,7 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
 
               <div className="flex flex-col gap-1">
                 <label className={`text-[11px] font-medium ${theme.textTitle}`}>
-                  Right Marker (⊐)
+                  {isFr ? "Marqueur Droit (⊐)" : "Right Marker (⊐)"}
                 </label>
                 <input
                   type="text"
@@ -181,7 +184,7 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
             <div className="grid grid-cols-2 gap-2">
               <div className="flex flex-col gap-1">
                 <label className={`text-[11px] font-medium ${theme.textTitle}`}>
-                  Right Symbol (R)
+                  {isFr ? "Symbole Droit (R)" : "Right Symbol (R)"}
                 </label>
                 <input
                   type="text"
@@ -195,7 +198,7 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
 
               <div className="flex flex-col gap-1">
                 <label className={`text-[11px] font-medium ${theme.textTitle}`}>
-                  Left Symbol (L)
+                  {isFr ? "Symbole Gauche (L)" : "Left Symbol (L)"}
                 </label>
                 <input
                   type="text"
@@ -216,7 +219,7 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
               {/* Top Row: Blank Symbol */}
               <div className="flex flex-col gap-1">
                 <label className={`text-[11px] font-medium ${theme.textTitle}`}>
-                  Blank Symbol (B)
+                  {isFr ? "Symbole Vide (B)" : "Blank Symbol (B)"}
                 </label>
                 <input
                   type="text"
@@ -231,7 +234,7 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
               <div className="flex flex-row items-center gap-3 w-full">
                 <div className="flex flex-col gap-1 flex-1 min-w-0">
                   <label className={`text-[11px] font-medium ${theme.textTitle}`}>
-                    Right Symbol (R)
+                    {isFr ? "Symbole Droit (R)" : "Right Symbol (R)"}
                   </label>
                   <input
                     type="text"
@@ -245,7 +248,7 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
 
                 <div className="flex flex-col gap-1 flex-1 min-w-0">
                   <label className={`text-[11px] font-medium ${theme.textTitle}`}>
-                    Left Symbol (L)
+                    {isFr ? "Symbole Gauche (L)" : "Left Symbol (L)"}
                   </label>
                   <input
                     type="text"
@@ -270,7 +273,7 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
       {/* Automaton Type Selector */}
       <div className="flex flex-col gap-1.5">
         <label className={`text-xs font-semibold uppercase tracking-wider ${theme.textTitle}`}>
-          Automaton Type
+          {isFr ? "Type d'Automate" : "Automaton Type"}
         </label>
         
         <div className="relative w-full">
@@ -279,10 +282,18 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
             onChange={(e) => setSelectedType(e.target.value as AutomatonType)}
             className={`w-full appearance-none px-3 py-2 pr-8 ${theme.bgInput} ${theme.border} ${theme.textInput} border rounded-lg text-sm font-medium transition-colors ${theme.focusRing} cursor-pointer outline-none`}
           >
-            <option value="FSA" className={`${theme.bgInput} ${theme.border} ${theme.textInput}`}>Finite State Automata (FSA)</option>
-            <option value="PDA" className={`${theme.bgInput} ${theme.border} ${theme.textInput}`}>PushDown Automata (PDA)</option>
-            <option value="LBA" className={`${theme.bgInput} ${theme.border} ${theme.textInput}`}>Linear Bounded Automaton (LBA)</option>
-            <option value="TM" className={`${theme.bgInput} ${theme.border} ${theme.textInput}`}>Turing Machine (TM)</option>
+            <option value="FSA" className={`${theme.bgInput} ${theme.border} ${theme.textInput}`}>
+              {isFr ? "Automate à États Finis (FSA)" : "Finite State Automata (FSA)"}
+            </option>
+            <option value="PDA" className={`${theme.bgInput} ${theme.border} ${theme.textInput}`}>
+              {isFr ? "Automate à Pile (PDA)" : "PushDown Automata (PDA)"}
+            </option>
+            <option value="LBA" className={`${theme.bgInput} ${theme.border} ${theme.textInput}`}>
+              {isFr ? "Automate Borné Linéaire (LBA)" : "Linear Bounded Automaton (LBA)"}
+            </option>
+            <option value="TM" className={`${theme.bgInput} ${theme.border} ${theme.textInput}`}>
+              {isFr ? "Machine de Turing (TM)" : "Turing Machine (TM)"}
+            </option>
           </select>
           
           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-500">
@@ -298,13 +309,13 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
       {/* Engine Parameters */}
       <div className="flex flex-col gap-3">
         <h4 className={`text-xs font-semibold uppercase tracking-wider ${theme.textTitle}`}>
-          Global Symbols & Markers
+          {isFr ? "Symboles & Marqueurs Globaux" : "Global Symbols & Markers"}
         </h4>
 
         {/* Input Tape Alphabet (Sigma) */}
         <div className="flex flex-col gap-1">
           <label className={`text-[11px] font-medium ${theme.textTitle}`}>
-            Input Alphabet (Σ)
+            {isFr ? "Alphabet d'entrée (Σ)" : "Input Alphabet (Σ)"}
           </label>
           <input
             type="text"
@@ -325,7 +336,7 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
       <div className="flex items-center justify-between pt-1">
         {saved ? (
           <span className="text-xs font-mono text-emerald-600 font-medium">
-            ✓ Saved
+            {isFr ? "✓ Enregistré" : "✓ Saved"}
           </span>
         ) : (
           <span />
@@ -340,7 +351,7 @@ export default function Config({ theme, onChangeConfig }: ConfigProps) {
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
           </svg>
-          Save Config
+          {isFr ? "Enregistrer Config" : "Save Config"}
         </button>
       </div>
     </div>

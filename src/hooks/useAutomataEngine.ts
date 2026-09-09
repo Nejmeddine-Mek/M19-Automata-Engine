@@ -87,53 +87,121 @@ export function useAutomataEngine(): EngineAPI {
     const execMgr = executionManagerRef.current;
     if (!execMgr || executionStatus.isHalted) return;
 
+    const machineType = execMgr.machineType;
     const changes = execMgr.runStep();
 
-    if (changes.length === 0) {
-      halt();
-      return;
-    }
-
-    const nextTapes = applyChanges(activeTapesRef.current, changes);
-
-    // Evaluate EOI & Acceptance
-    const eoi = computeEOI(nextTapes);
-    const finalStates = execMgr.tapesAtFinalState();
-    let isAccepted = false;
-
-    for (const id of eoi) {
-      if (finalStates.has(id)) {
-        isAccepted = true;
-        break;
-      }
-    }
-
-    // Pass updated cell values back to the engine for next cycle
-    const cellValues = nextTapes.map((t) => t.tapeValue[t.currentHeadPosition] ?? "");
-    execMgr.setNewTapeCellValues(cellValues);
-
-    // Update React State & History
-    setActiveTapes(nextTapes);
-    historyRef.current.addStates(nextTapes);
-    updateHistoryState();
-
-    setExecutionStatus((prev) => {
-      const nextStep = prev.stepCount + 1;
-      if (isAccepted) {
+    if (machineType === "FSA") {
+      if (changes.length === 0) {
+        // Engine returned no new transitions (dead end / stuck)
         pause();
+        setExecutionStatus((prev) => ({
+          ...prev,
+          isHalted: true,
+          isExecuting: false,
+          isRejected: true,
+        }));
+        return;
+      }
+
+      const nextTapes = applyChanges(activeTapesRef.current, changes);
+      const eoi = computeEOI(nextTapes);
+      const finalStates = execMgr.tapesAtFinalState();
+
+      let isAccepted = false;
+      for (const id of eoi) {
+        if (finalStates.has(id)) {
+          isAccepted = true;
+          break;
+        }
+      }
+
+      // Rejection: All active tape threads reached End of Input without any thread accepting
+      const allReachedEOI = nextTapes.length > 0 && nextTapes.every((t) => eoi.has(t.id));
+      const isRejected = !isAccepted && allReachedEOI;
+
+      // Pass updated cell slices back to the engine for next cycle
+      const maxLen = (execMgr.getDefinition() as FsaDefinition)?.maxEntryLength ?? 1;
+      const cellValues = nextTapes.map((t) =>
+        t.tapeValue.slice(t.currentHeadPosition, t.currentHeadPosition + maxLen).join("")
+      );
+      execMgr.setNewTapeCellValues(cellValues);
+
+      // Update React State & History
+      setActiveTapes(nextTapes);
+      historyRef.current.addStates(nextTapes);
+      updateHistoryState();
+
+      setExecutionStatus((prev) => {
+        const nextStep = prev.stepCount + 1;
+        if (isAccepted) {
+          pause();
+          return {
+            ...prev,
+            stepCount: nextStep,
+            isAccepted: true,
+            isHalted: true,
+            isExecuting: false,
+          };
+        }
+        if (isRejected) {
+          pause();
+          return {
+            ...prev,
+            stepCount: nextStep,
+            isRejected: true,
+            isHalted: true,
+            isExecuting: false,
+          };
+        }
         return {
           ...prev,
           stepCount: nextStep,
-          isAccepted: true,
-          isHalted: true,
-          isExecuting: false,
         };
+      });
+    } else {
+      // ── Generic / TM / PDA / LBA Evaluation ──────────────────
+      if (changes.length === 0) {
+        halt();
+        return;
       }
-      return {
-        ...prev,
-        stepCount: nextStep,
-      };
-    });
+
+      const nextTapes = applyChanges(activeTapesRef.current, changes);
+      const eoi = computeEOI(nextTapes);
+      const finalStates = execMgr.tapesAtFinalState();
+      let isAccepted = false;
+
+      for (const id of eoi) {
+        if (finalStates.has(id)) {
+          isAccepted = true;
+          break;
+        }
+      }
+
+      const cellValues = nextTapes.map((t) => t.tapeValue[t.currentHeadPosition] ?? "");
+      execMgr.setNewTapeCellValues(cellValues);
+
+      setActiveTapes(nextTapes);
+      historyRef.current.addStates(nextTapes);
+      updateHistoryState();
+
+      setExecutionStatus((prev) => {
+        const nextStep = prev.stepCount + 1;
+        if (isAccepted) {
+          pause();
+          return {
+            ...prev,
+            stepCount: nextStep,
+            isAccepted: true,
+            isHalted: true,
+            isExecuting: false,
+          };
+        }
+        return {
+          ...prev,
+          stepCount: nextStep,
+        };
+      });
+    }
   }, [executionStatus.isHalted, halt, pause, updateHistoryState]);
 
   const run = useCallback(() => {

@@ -26,6 +26,7 @@ export interface ThemeConfig {
 
 interface ExecSpaceProps {
   theme: ThemeConfig;
+  language?: "en" | "fr";
   activeTapes: ActiveTape[];
   executionStatus: ExecutionStatus;
   machineDefinition?: FsaDefinition | PDADefinition | LBADefinition | TMDefinition | null;
@@ -42,6 +43,7 @@ interface ExecSpaceProps {
 
 export function ExecSpace({
   theme,
+  language = "en",
   activeTapes,
   executionStatus,
   machineDefinition,
@@ -58,6 +60,8 @@ export function ExecSpace({
   const [inputArg, setInputArg] = useState<string>('');
   const [animSpeed, setAnimSpeed] = useState<number>(800); // Speed in ms
   const [showDiagram, setShowDiagram] = useState<boolean>(true);
+
+  const isFr = language === "fr";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +83,7 @@ export function ExecSpace({
             htmlFor="exec-input-arg" 
             className={`text-xs font-semibold uppercase tracking-wider ${theme.textTitle} ${theme.fontMono}`}
           >
-            Input:
+            {isFr ? "Entrée:" : "Input:"}
           </label>
           <input
             id="exec-input-arg"
@@ -98,7 +102,7 @@ export function ExecSpace({
             htmlFor="speed-range" 
             className={`text-xs ${theme.fontMono} uppercase tracking-wider ${theme.textMuted} whitespace-nowrap`}
           >
-            Delay: <span className={`font-bold ${theme.textTitle} w-12 inline-block text-right`}>{animSpeed}ms</span>
+            {isFr ? "Délai:" : "Delay:"} <span className={`font-bold ${theme.textTitle} w-12 inline-block text-right`}>{animSpeed}ms</span>
           </label>
           <input
             id="speed-range"
@@ -120,7 +124,7 @@ export function ExecSpace({
             type="button"
             onClick={onStepBack}
             disabled={!canStepBack || isExecuting}
-            title="Step Back"
+            title={isFr ? "Reculer" : "Step Back"}
             className="px-2.5 py-1.5 text-xs font-semibold font-mono bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 rounded text-zinc-200 cursor-pointer"
           >
             ◀
@@ -131,10 +135,10 @@ export function ExecSpace({
             type="button"
             onClick={onStep}
             disabled={isHalted || isExecuting}
-            title="Step Forward"
+            title={isFr ? "Avancer d'un pas" : "Step Forward"}
             className="px-3 py-1.5 text-xs font-semibold font-mono bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 rounded text-zinc-200 cursor-pointer"
           >
-            Step ▶
+            {isFr ? "Pas ▶" : "Step ▶"}
           </button>
 
           {/* History Forward */}
@@ -142,7 +146,7 @@ export function ExecSpace({
             type="button"
             onClick={onStepForward}
             disabled={!canStepForward || isExecuting}
-            title="Step Forward (History)"
+            title={isFr ? "Avancer (Historique)" : "Step Forward (History)"}
             className="px-2.5 py-1.5 text-xs font-semibold font-mono bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 rounded text-zinc-200 cursor-pointer"
           >
             ▶
@@ -164,7 +168,7 @@ export function ExecSpace({
               disabled={isHalted || activeTapes.length === 0}
               className="px-4 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white rounded transition-all shadow-sm cursor-pointer"
             >
-              Run
+              {isFr ? "Exécuter" : "Run"}
             </button>
           )}
 
@@ -174,7 +178,7 @@ export function ExecSpace({
             disabled={isExecuting}
             className="px-4 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider bg-sky-600 hover:bg-sky-500 text-white rounded transition-all shadow-sm disabled:opacity-50 cursor-pointer"
           >
-            Load & Init
+            {isFr ? "Charger & Init" : "Load & Init"}
           </button>
 
           {/* Halt Action Button */}
@@ -184,7 +188,7 @@ export function ExecSpace({
             onClick={onHalt}
             className="px-4 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider bg-rose-600 hover:bg-rose-500 text-white rounded transition-all shadow-sm disabled:opacity-40 cursor-pointer"
           >
-            Halt
+            {isFr ? "Arrêter" : "Halt"}
           </button>
 
           {/* Diagram Toggle Button */}
@@ -196,7 +200,7 @@ export function ExecSpace({
                 showDiagram ? 'bg-cyan-600 text-white hover:bg-cyan-500' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
               }`}
             >
-              {showDiagram ? 'Hide Diagram' : 'Show Diagram'}
+              {showDiagram ? (isFr ? 'Masquer Schéma' : 'Hide Diagram') : (isFr ? 'Afficher Schéma' : 'Show Diagram')}
             </button>
           )}
         </div>
@@ -208,10 +212,14 @@ export function ExecSpace({
           isAccepted ? 'bg-emerald-950/60 text-emerald-400' : isRejected ? 'bg-rose-950/60 text-rose-400' : 'bg-amber-950/60 text-amber-400'
         }`}>
           <span>
-            {isAccepted ? '✓ Input Accepted' : isRejected ? '✗ Input Rejected' : '⏸ Execution Halted'}
+            {isAccepted
+              ? (isFr ? '✓ Entrée Acceptée' : '✓ Input Accepted')
+              : isRejected
+              ? (isFr ? '✗ Entrée Rejetée' : '✗ Input Rejected')
+              : (isFr ? '⏸ Exécution Arrêtée' : '⏸ Execution Halted')}
           </span>
           <span className="text-[10px] opacity-80">
-            Step Count: {executionStatus.stepCount}
+            {isFr ? "Nombre de pas:" : "Step Count:"} {executionStatus.stepCount}
           </span>
         </div>
       )}
@@ -225,6 +233,7 @@ export function ExecSpace({
               definition={machineDefinition as FsaDefinition}
               activeStates={activeTapes.map((t) => t.currentState).filter(Boolean) as string[]}
               theme={theme}
+              language={language}
             />
           </div>
         )}

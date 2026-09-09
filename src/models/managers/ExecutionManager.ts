@@ -14,12 +14,14 @@ export class ExecutionManager{
     public instanceManager: InstanceManager
 
     public readonly initialTape: string;
+    public readonly machineType: string;
     private definition: FsaDefinition | PDADefinition | LBADefinition | TMDefinition | null | undefined;
     private engine: Engine;
     private halted: boolean;
 
     // for the PDA, we will need to keep the states of stacks, we do that later
     constructor(machineType: string, tape: string, definition: FsaDefinition | PDADefinition | LBADefinition | TMDefinition | null | undefined) {
+        this.machineType = machineType;
         this.initialTape = tape;
         this.definition = definition;
 
@@ -52,13 +54,20 @@ export class ExecutionManager{
     }
 
   public setInitialTapeStates(initialTapeState: ActiveTape): void {
-      console.log(initialTapeState)
-      this.engine.setInitialTapeState(initialTapeState.tapeValue[initialTapeState.currentHeadPosition], initialTapeState.currentHeadPosition, this.definition!, initialTapeState.id)
+      const maxLen = (this.definition as FsaDefinition)?.maxEntryLength ?? 1;
+      const initialSlice = initialTapeState.tapeValue
+        .slice(initialTapeState.currentHeadPosition, initialTapeState.currentHeadPosition + maxLen)
+        .join("");
+      this.engine.setInitialTapeState(initialSlice, initialTapeState.currentHeadPosition, this.definition!, initialTapeState.id);
   }
 
   public getCurrentExecutionState(){
       return this.engine.getEngineState()
 
+  }
+
+  public getDefinition() {
+      return this.definition;
   }
 
   public tapesAtFinalState(): Map<string, string>{

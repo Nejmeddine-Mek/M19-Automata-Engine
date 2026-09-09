@@ -17,10 +17,10 @@ export function applyChanges(
         currentState: change.currentState ?? existing.currentState,
       };
 
-      if (change.nextHeadPosition === 1) {
-        updated.currentHeadPosition += 1;
-      } else if (change.nextHeadPosition === -1) {
-        updated.currentHeadPosition -= 1;
+      if (change.nextHeadPosition > 0) {
+        updated.currentHeadPosition += change.nextHeadPosition;
+      } else if (change.nextHeadPosition < 0) {
+        updated.currentHeadPosition += change.nextHeadPosition;
       } else {
         // Write symbol operation
         updated.tapeValue[updated.currentHeadPosition] = change.currentTapeValue;
@@ -34,10 +34,10 @@ export function applyChanges(
       const tapeValue = parent ? [...parent.tapeValue] : [];
       let headPos = parent ? parent.currentHeadPosition : 0;
 
-      if (change.nextHeadPosition === 1) {
-        headPos += 1;
-      } else if (change.nextHeadPosition === -1) {
-        headPos -= 1;
+      if (change.nextHeadPosition > 0) {
+        headPos += change.nextHeadPosition;
+      } else if (change.nextHeadPosition < 0) {
+        headPos += change.nextHeadPosition;
       } else if (parent) {
         tapeValue[headPos] = change.currentTapeValue;
       }

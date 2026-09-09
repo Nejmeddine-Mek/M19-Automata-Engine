@@ -127,26 +127,34 @@ export class Engine{
                     }
                 }
             }
-            // 2. Consume Symbol & Spawn Next Instances
-            const currentSymbol = this.tapesCurrentValue[i]
-            const nextPos = 1;
-            const resolvedActiveStatesList = Array.from(resolvedActiveStates)
+            // 2. Consume Substring & Spawn Next Instances
+            const currentSlice = this.tapesCurrentValue[i] ?? "";
+            const resolvedActiveStatesList = Array.from(resolvedActiveStates);
+            let isFirstBranchForInstance = true;
 
-            for(let j = 0; j < resolvedActiveStatesList.length; ++j){
-                const nextStates = fsa.stateTransition.get(resolvedActiveStatesList[j])?.get(currentSymbol)
-                console.log("STATE: ", this.activeStates[i],currentSymbol,"next states: ", nextStates)
-                if(nextStates !== undefined){
-                    for(let k = 0; k < nextStates.length; ++k){
-                        if( k === 0 && j === 0){
-                            newParentsIds.push(this.parentInstancesIds[i])
-                            newIdsList.push(this.idsList[i])
-                        } else {
-                            newParentsIds.push(this.idsList[i])
-                            newIdsList.push(InstanceManager.assignId())
+            for (let j = 0; j < resolvedActiveStatesList.length; ++j) {
+                const stateInnerMap = fsa.stateTransition.get(resolvedActiveStatesList[j]);
+                if (!stateInnerMap) continue;
+
+                // Try matching candidate prefix strings from currentSlice.length down to 1
+                for (let len = currentSlice.length; len >= 1; len--) {
+                    const candidateSymbol = currentSlice.substring(0, len);
+                    const nextStates = stateInnerMap.get(candidateSymbol);
+
+                    if (nextStates !== undefined && nextStates.length > 0) {
+                        for (let k = 0; k < nextStates.length; ++k) {
+                            if (isFirstBranchForInstance) {
+                                newParentsIds.push(this.parentInstancesIds[i]);
+                                newIdsList.push(this.idsList[i]);
+                                isFirstBranchForInstance = false;
+                            } else {
+                                newParentsIds.push(this.idsList[i]);
+                                newIdsList.push(InstanceManager.assignId());
+                            }
+                            newActiveStates.push(nextStates[k]);
+                            newNextHeadPosition.push(len); // Move head forward by matched string length
+                            newTapesCurrentValue.push(candidateSymbol);
                         }
-                        newActiveStates.push(nextStates[k])
-                        newNextHeadPosition.push(nextPos)
-                        newTapesCurrentValue.push(currentSymbol)
                     }
                 }
             }
@@ -154,12 +162,12 @@ export class Engine{
         }
 
         // 3. Atomically update vectors for the next execution step
-        this.idsList = newIdsList
+        this.idsList = newIdsList;
         this.activeStates = newActiveStates;
         this.headNextPosition = newNextHeadPosition;
         this.parentInstancesIds = newParentsIds;
         this.tapesCurrentValue = newTapesCurrentValue;
-        console.log(this.headNextPosition)
+        console.log(this.headNextPosition);
     }
 
 
