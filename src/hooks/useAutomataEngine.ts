@@ -223,9 +223,10 @@ export function useAutomataEngine(): EngineAPI {
     ) => {
       pause();
       animationDelayRef.current = animationDelay;
-
+      console.log(config)
       const parsingManager = new ParsingManager(config.machineType);
       const definition = parsingManager.parseCode(config, code);
+
       setMachineDefinition(definition);
       const execMgr = new ExecutionManager(config.machineType, input, definition);
       executionManagerRef.current = execMgr;
@@ -249,11 +250,12 @@ export function useAutomataEngine(): EngineAPI {
         const tmDef = definition as TMDefinition;
         initialTape.blankSymbol = tmConfig.emptyTape;
         initialTape.tapeValue = (
-          tmDef.blankSymbol.repeat(8) +
+          tmDef.blankSymbol.repeat(12) +
           input +
-          tmDef.blankSymbol.repeat(8)
+          tmDef.blankSymbol.repeat(12)
         ).split("");
         initialTape.currentHeadPosition = 8;
+
       } else if(config.machineType === 'LBA'){
         const lbaDef = definition as LBADefinition;
         initialTape.tapeValue = (lbaDef.beginningSymbol + input + lbaDef.endSymbol).split("")

@@ -1,5 +1,24 @@
 import type { ActiveTape, TapeStepChange } from "../models/interfaces/activeTapeConfigs";
 
+const EXTEND_COUNT = 4;
+
+function ensureTapeBounds(tape: ActiveTape): void {
+  const blank = tape.blankSymbol ?? "⊔";
+
+  // Check left boundary (head is at or 1 step close to left edge: <= 1)
+  if (tape.currentHeadPosition <= 1) {
+    const blanks = Array(EXTEND_COUNT).fill(blank);
+    tape.tapeValue.unshift(...blanks);
+    tape.currentHeadPosition += EXTEND_COUNT;
+  }
+
+  // Check right boundary (head is at or 1 step close to right edge: >= length - 2)
+  if (tape.currentHeadPosition >= tape.tapeValue.length - 2) {
+    const blanks = Array(EXTEND_COUNT).fill(blank);
+    tape.tapeValue.push(...blanks);
+  }
+}
+
 export function applyChanges(
   currentTapes: ActiveTape[],
   changes: TapeStepChange[]
@@ -25,7 +44,8 @@ export function applyChanges(
         // Write symbol operation
         updated.tapeValue[updated.currentHeadPosition] = change.currentTapeValue;
       }
-
+      if(updated.blankSymbol)
+        ensureTapeBounds(updated);
       result.push(updated);
     } else {
       // Forked instance (nondeterministic branch)
@@ -42,7 +62,7 @@ export function applyChanges(
         tapeValue[headPos] = change.currentTapeValue;
       }
 
-      result.push({
+      const forkedTape: ActiveTape = {
         id: change.id,
         index: result.length,
         parentId: change.parentId,
@@ -52,7 +72,10 @@ export function applyChanges(
         status: "ACTIVE",
         blankSymbol: parent ? parent.blankSymbol : null,
         stack: parent && parent.stack ? [...parent.stack] : null,
-      });
+      };
+
+      ensureTapeBounds(forkedTape);
+      result.push(forkedTape);
     }
   }
 

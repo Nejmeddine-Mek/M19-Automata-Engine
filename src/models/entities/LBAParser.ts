@@ -23,80 +23,100 @@ export class LBAParser{
     this.leftSymbol = leftSymbol
  }
 
- public parseInstructions(code: string): LBADefinition | null{
-    const cleanedCode = CleaningService(code)
-    if(cleanedCode.length === 0)
-        return null
-    if(cleanedCode.length < 2){
-        //TODO THROW AN ERROR INCOMPLETE CODE, NO INSTRUCTIONS
-        return null
+ public parseInstructions(code: string): LBADefinition | null {
+    const cleanedCode = CleaningService(code);
+    console.log('cleaned code', cleanedCode)
+    if (cleanedCode.length === 0) return null;
+    
+    if (cleanedCode.length < 2) {
+        // TODO: THROW AN ERROR INCOMPLETE CODE, NO INSTRUCTIONS
+        return null;
     }
-    // the way this works should be as follows
-    let initialState : string
-    const finalStates : Set<string> = new Set<string>()
 
-    // INITIAL DIRECTIVE -------------------------
-    let lineTokens = cleanedCode[0].split(this.DIRECTIVES_SEPARATOR)
-    if(lineTokens[0].toLocaleLowerCase() !== "initial"){
+    const finalStates: Set<string> = new Set<string>();
+
+    // 1. PROCESS INITIAL DIRECTIVE -------------------------
+    let initialTokens = cleanedCode[0].split(this.DIRECTIVES_SEPARATOR).map(t => t.trim());
+    
+    if (initialTokens[0].toLowerCase() !== "initial") {
         // TODO: throw a compile time error, no initial state declared
     }
-
-    if (!lineTokens[1]) {
-         // TODO: throw error - directive missing value/separator
-        return null
+    if (!initialTokens[1]) {
+        // TODO: throw error - directive missing value/separator
+        return null;
     }
-
-    //WE CAN MAKE SURE IT IS A SINGLETON BY CHECKING FOR SEPARATORS
-    if(containsForbiddenChar(lineTokens[1].trim())){
-        //TODO: throw an error, initial state contains forbidden chars
+    if (containsForbiddenChar(initialTokens[1])) {
+        // TODO: throw an error, initial state contains forbidden chars
     }
+    
+    const initialState = initialTokens[1];
 
-    initialState = lineTokens[1].trim()
-
-    if (!lineTokens[1]) {
-         // TODO: throw error or allow empty final states depending on your DSL spec
+    // 2. PROCESS FINAL STATES DIRECTIVE -------------------------
+    // Assigning cleanedCode[1] to get the final states
+    let finalTokens = cleanedCode[1].split(this.DIRECTIVES_SEPARATOR).map(t => t.trim());
+    
+    if (!finalTokens[1]) {
+        // TODO: throw error or allow empty final states depending on your DSL spec
     } else {
-        lineTokens[1]
+        finalTokens[1]
             .split(this.COMMA)
             .map(token => token.trim())
             .filter(token => token.length > 0)
             .forEach(token => finalStates.add(token));
     }
     
-    // PROCESS INSTRUCTIONS ---------------
-    // HERE WE NEED TO SET THE DEFINITIONS AND TYPES BEFORE WE PROCEED
-    const instructions= new Map()
-    for(let i = 2; i < cleanedCode.length; ++i){
-        // TODO: write parsing code here
-        lineTokens = cleanedCode[i].split(this.COMMA)
-        if(lineTokens.length !== 4){
-            // TODO: inst format not respected err
-            console.log("format mismatch")
-            return null
+    // 3. PROCESS INSTRUCTIONS -----------------------------------
+    const instructions = new Map<string, Map<string, ActionTransition>>();
+    
+    for (let i = 2; i < cleanedCode.length; ++i) {
+        // Map all tokens to trimmed versions immediately to prevent mismatch bugs
+        const lineTokens = cleanedCode[i].split(this.COMMA).map(t => t.trim());
+        
+        if (lineTokens.length !== 4) {
+            console.log("format mismatch");
+            return null;
         }
-        let stateInnerMap: Map<string, ActionTransition>  = instructions.get(lineTokens[0]) || new Map<string, ActionTransition>()
-        if(!this.alphabet.has(lineTokens[1].trim())){
-            // TODO: throw an error, symbol does not belong to alphabet
-            console.log("letter not in alphabet")
-            return null
+
+        const [state, readSymbol, actionSymbol, nextState] = lineTokens;
+
+        if (!this.alphabet.has(readSymbol)) {
+            console.log("letter not in alphabet");
+            return null;
         }
-        let currentAction: ActionTransition = stateInnerMap.get(lineTokens[1].trim()) || {action: [], nextStates: []}
-        if(!this.alphabet.has(lineTokens[2].trim()) /* || moveSymbols.has(lineTokens[2]) */){
-            //TODO: unrecognized symbol, error
-            console.log(lineTokens[2] ," not recognized")
-            return null
+
+        if ((readSymbol === this.beginningSymbol && actionSymbol === this.leftSymbol) || 
+            (readSymbol === this.endSymbol && actionSymbol === this.rightSymbol)) {
+            console.log('action not allowed');
+            return null;
         }
-        // fill the actions object
-        currentAction.action.push(lineTokens[2].trim())
-        currentAction.nextStates.push(lineTokens[3].trim())
-        // fill the state map
-        stateInnerMap.set(lineTokens[1].trim(),currentAction)
-        // add the states map to the instructions map
-        instructions.set(lineTokens[0].trim(),stateInnerMap)
-            
+
+        // Make sure you validate actionSymbol correctly (it could be a movement or a character)
+        if (!this.alphabet.has(actionSymbol) /* && !moveSymbols.has(actionSymbol) */) {
+            console.log(actionSymbol, "not recognized");
+            return null;
+        }
+
+        if (actionSymbol === this.endSymbol || actionSymbol === this.beginningSymbol) {
+            console.log('writing end symbols not allowed');
+            return null;
+        }
+
+        // Get or create the inner map
+        let stateInnerMap = instructions.get(state) || new Map<string, ActionTransition>();
+        
+        // Get or create the current action
+        let currentAction = stateInnerMap.get(readSymbol) || { action: [], nextStates: [] };
+        
+        // Populate the actions
+        currentAction.action.push(actionSymbol);
+        currentAction.nextStates.push(nextState);
+        
+        // Save back into maps
+        stateInnerMap.set(readSymbol, currentAction);
+        instructions.set(state, stateInnerMap);
     }
-    console.log(initialState, finalStates, instructions);
-    return{
+
+    const definition: LBADefinition = {
         initial: initialState,
         finalStates: finalStates,
         beginningSymbol: this.beginningSymbol,
@@ -104,8 +124,10 @@ export class LBAParser{
         rightSymbol: this.rightSymbol,
         leftSymbol: this.leftSymbol,
         stateTransition: instructions
-        
-    }
- }
+    };
+
+    console.log("def: ", definition);
+    return definition;
+}
 
 }

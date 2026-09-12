@@ -40,6 +40,8 @@ export default function Config({ theme, language = "en", onChangeConfig }: Confi
     // TODO: Connect to engine / parent state dispatch
     setSaved(true)
     const parsedLetters = alphabet.split(',').map(letter => letter.trim())
+    const parsedAuxAlphabet = auxiliaryAlphabet.split(',').map(letter => letter.trim())
+    console.log(parsedAuxAlphabet)
     switch(selectedType){
       case 'FSA':
         onChangeConfig({
@@ -53,27 +55,19 @@ export default function Config({ theme, language = "en", onChangeConfig }: Confi
           machineType: 'PDA'
         })
         break
-      case 'LBA':
-        const parsedAuxAlphabet = auxiliaryAlphabet.split(',').map(letter => letter.trim())
+      case 'LBA': {
         const lba: LBAConfig = {
           machineType: 'LBA',
-          alphabet: parsedLetters,
+          alphabet: [...parsedLetters, ...parsedAuxAlphabet],
           auxiliaryAlphabet: parsedAuxAlphabet,
           startSymbol: leftBoundSymbol,
           endSymbol: rightBoundSymbol,
           right: rightSymbol,
           left: leftSymbol
         }
-        console.log(lba)
-        onChangeConfig(        {
-          machineType: 'LBA',
-          alphabet: parsedLetters,
-          startSymbol: leftBoundSymbol,
-          endSymbol: rightBoundSymbol,
-          right: rightSymbol,
-          left: leftSymbol
-        })
+        onChangeConfig(lba)
         break
+      }
       case 'TM':
         onChangeConfig({
           machineType: 'TM',

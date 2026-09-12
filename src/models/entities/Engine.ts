@@ -178,6 +178,92 @@ export class Engine{
          */
     }
     private LBAExec(){
+        const lba = this.machineDefinition as LBADefinition
+        
+        const newIdsList: string[] = []
+        const newNextHeadPosition: number[] = []
+        const newActiveStates: string[] = []
+        const newParentsIds: string[] = []
+        const newTapesCurrentValue: string[] = []
+        for(let i = 0; i < this.activeStates.length; ++i){
+
+            const currentState = this.activeStates[i]
+            const currentSymbol = this.tapesCurrentValue[i]
+
+            const innerMap = lba.stateTransition.get(currentState)
+
+            if (!innerMap) {
+                console.log("current state not in inner map: ", currentState)
+                // This branch has no outgoing transitions.
+                continue;
+            }
+
+            const nextActions = innerMap.get(currentSymbol);
+            if (!nextActions) {
+                console.log("reading unrecognized symbol: ", currentSymbol)
+                // This branch has no valid transition.
+                continue;
+            }
+            // 3. Spawn one execution instance for each possible action.
+            for (let j = 0; j < nextActions.action.length; ++j) {
+                const action = nextActions.action[j];
+                const nextState = nextActions.nextStates[j];
+
+                newActiveStates.push(nextState);
+
+                /*
+                * Every transition performs exactly ONE operation:
+                *
+                *   R -> move right, do not write
+                *   L -> move left,  do not write
+                *   X -> write X,    do not move
+                */
+                if (action === lba.rightSymbol) {
+                    newNextHeadPosition.push(1);
+                    newTapesCurrentValue.push(currentSymbol);
+
+                } else if (action === lba.leftSymbol) {
+                    newNextHeadPosition.push(-1);
+                    newTapesCurrentValue.push(currentSymbol);
+
+                } else {
+                    // Write operation: head remains stationary.
+                    newNextHeadPosition.push(0);
+                    newTapesCurrentValue.push(action);
+                }
+
+                /*
+                * Lineage:
+                *
+                * First branch keeps the current instance's ID/parent.
+                * Additional nondeterministic branches get their own ID
+                * and point back to the current instance.
+                */
+                if (j === 0) {
+                    newIdsList.push(this.idsList[i]);
+                    newParentsIds.push(this.parentInstancesIds[i]);
+                } else {
+                    newIdsList.push(InstanceManager.assignId());
+                    newParentsIds.push(this.idsList[i]);
+                }
+            }
+        }
+
+        // 4. Atomically update all execution vectors.
+        this.idsList = newIdsList;
+        this.activeStates = newActiveStates;
+        this.headNextPosition = newNextHeadPosition;
+        this.parentInstancesIds = newParentsIds;
+        this.tapesCurrentValue = newTapesCurrentValue;
+
+        console.log({
+            idsList: this.idsList,
+            activeStates: this.activeStates,
+            headMovements: this.headNextPosition,
+            parentInstances: this.parentInstancesIds,
+            tapeValues: this.tapesCurrentValue,
+        });
+
 
     }
     private TMExec() {
@@ -188,7 +274,7 @@ export class Engine{
         const newActiveStates: string[] = [];
         const newParentsIds: string[] = [];
         const newTapesCurrentValue: string[] = [];
-        console.log(this.getEngineState())
+        
         // Consume the current symbol and spawn the next execution instances.
         for (let i = 0; i < this.activeStates.length; ++i) {
 

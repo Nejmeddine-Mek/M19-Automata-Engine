@@ -1,9 +1,23 @@
 import { useState, useEffect, useRef } from "react";
-import type { FsaDefinition } from "../models/interfaces/FsaDefinition";
 import type { ThemeType } from "../App";
 
-interface FSAGraphProps {
-  definition: FsaDefinition | null;
+export interface ActionTransition {
+  action: string[];
+  nextStates: string[];
+}
+
+export interface LBADefinition {
+  initial: string;
+  finalStates: Set<string>;
+  beginningSymbol: string;
+  endSymbol: string;
+  rightSymbol: string;
+  leftSymbol: string;
+  stateTransition: Map<string, Map<string, ActionTransition>>;
+}
+
+interface LBAGraphProps {
+  definition: LBADefinition | null;
   activeStates?: string[];
   theme: ThemeType;
   language?: "en" | "fr";
@@ -21,12 +35,12 @@ interface Edge {
   labels: string[];
 }
 
-export default function FSAGraph({ definition, activeStates = [], theme, language = "en" }: FSAGraphProps) {
+export default function LBAGraph({ definition, activeStates = [], theme, language = "en" }: LBAGraphProps) {
   const [nodePositions, setNodePositions] = useState<Map<string, NodePos>>(new Map());
   const [draggingNode, setDraggingNode] = useState<string | null>(null);
   
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const dragOffset = useRef({ x: 0, y: 0 });
+  const dragOffset = useRef({ x: 0, y: 0 }); // Tracks where exactly you clicked on the node
 
   const isFr = language === "fr";
 
@@ -34,7 +48,6 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
   const VIEWBOX_WIDTH = 720;
   const VIEWBOX_HEIGHT = 400;
 
-  // Compute node positions and transition edges whenever definition changes
   useEffect(() => {
     if (!definition) {
       setNodePositions(new Map());
@@ -46,11 +59,12 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
     if (definition.finalStates) {
       definition.finalStates.forEach((s) => statesSet.add(s));
     }
+    
     if (definition.stateTransition) {
       definition.stateTransition.forEach((symbolMap, fromState) => {
         statesSet.add(fromState);
-        symbolMap.forEach((nextStates) => {
-          nextStates.forEach((toState) => statesSet.add(toState));
+        symbolMap.forEach((actionTrans) => {
+          actionTrans.nextStates.forEach((toState) => statesSet.add(toState));
         });
       });
     }
@@ -63,7 +77,6 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
 
     const newPositions = new Map<string, NodePos>();
     stateList.forEach((state, i) => {
-      // Circular layout
       const angle = (2 * Math.PI * i) / Math.max(total, 1) - Math.PI / 2;
       const x = total === 1 ? centerX : centerX + radius * Math.cos(angle);
       const y = total === 1 ? centerY : centerY + radius * Math.sin(angle);
@@ -73,7 +86,6 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
     setNodePositions(newPositions);
   }, [definition]);
 
-  // Handle Dragging with offset correction
   const handleMouseDown = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!svgRef.current) return;
@@ -82,11 +94,13 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
     const scaleX = VIEWBOX_WIDTH / rect.width;
     const scaleY = VIEWBOX_HEIGHT / rect.height;
     
+    // Map screen pixel to viewBox coordinate
     const mouseX = (e.clientX - rect.left) * scaleX;
     const mouseY = (e.clientY - rect.top) * scaleY;
     
     const node = nodePositions.get(id);
     if (node) {
+      // Calculate difference between mouse click and node center
       dragOffset.current = {
         x: mouseX - node.x,
         y: mouseY - node.y
@@ -103,6 +117,7 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
     const scaleX = VIEWBOX_WIDTH / rect.width;
     const scaleY = VIEWBOX_HEIGHT / rect.height;
 
+    // Apply scale and offset so the node doesn't jump
     const mouseX = (e.clientX - rect.left) * scaleX;
     const mouseY = (e.clientY - rect.top) * scaleY;
     
@@ -126,27 +141,20 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
   const handleSavePNG = () => {
     if (!svgRef.current) return;
 
-    // Clone the SVG DOM element so the live interface is unaffected
     const clonedSvg = svgRef.current.cloneNode(true) as SVGSVGElement;
-
-    // Remove all glowing/pulsing animation elements
     const pingElements = clonedSvg.querySelectorAll(".animate-ping");
     pingElements.forEach((el) => el.remove());
 
-    // Convert colors for clean high-contrast print mode (white fill, black strokes & text)
-    // 1. Markers (arrowheads)
     clonedSvg.querySelectorAll("marker path").forEach((el) => {
       el.setAttribute("fill", "#000000");
     });
 
-    // 2. Lines & Paths (edges & start arrow line)
     clonedSvg.querySelectorAll("path, line").forEach((el) => {
       if (el.getAttribute("stroke")) {
         el.setAttribute("stroke", "#000000");
       }
     });
 
-    // 3. Node Circles & Accept state inner rings
     clonedSvg.querySelectorAll("circle").forEach((el) => {
       const isRing = el.getAttribute("fill") === "none";
       if (isRing) {
@@ -158,13 +166,11 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
       }
     });
 
-    // 4. Edge Label Background Rectangles
     clonedSvg.querySelectorAll("rect").forEach((el) => {
       el.setAttribute("fill", "#ffffff");
       el.setAttribute("stroke", "#ffffff");
     });
 
-    // 5. Text elements (labels, node IDs, Start indicator)
     clonedSvg.querySelectorAll("text").forEach((el) => {
       el.setAttribute("fill", "#000000");
       el.removeAttribute("class");
@@ -174,7 +180,6 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
       );
     });
 
-    // Inject explicit font styles into cloned SVG defs for accurate canvas rasterization
     let defs = clonedSvg.querySelector("defs");
     if (!defs) {
       defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
@@ -186,7 +191,6 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
     `;
     defs.appendChild(styleEl);
 
-    // Set standard SVG attributes for standalone rendering
     clonedSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
     clonedSvg.setAttribute("width", String(VIEWBOX_WIDTH));
     clonedSvg.setAttribute("height", String(VIEWBOX_HEIGHT));
@@ -197,7 +201,6 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
 
     const img = new Image();
     img.onload = () => {
-      // Scale canvas 2x for sharp, high-resolution rendering
       const scale = 2;
       const canvas = document.createElement("canvas");
       canvas.width = VIEWBOX_WIDTH * scale;
@@ -206,8 +209,6 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
 
       if (ctx) {
         ctx.scale(scale, scale);
-
-        // Fill clean white background ideal for practice exercises and exams
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, VIEWBOX_WIDTH, VIEWBOX_HEIGHT);
         ctx.drawImage(img, 0, 0, VIEWBOX_WIDTH, VIEWBOX_HEIGHT);
@@ -215,7 +216,7 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
         const pngUrl = canvas.toDataURL("image/png");
         const downloadLink = document.createElement("a");
         downloadLink.href = pngUrl;
-        downloadLink.download = "fsa_graph.png";
+        downloadLink.download = "lba_graph.png";
         document.body.appendChild(downloadLink);
         downloadLink.click();
         document.body.removeChild(downloadLink);
@@ -229,25 +230,27 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
   if (!definition) {
     return (
       <div className={`w-full h-[400px] flex items-center justify-center ${theme.fontMono} ${theme.textMuted} border ${theme.borderSubtle} rounded-lg ${theme.bgPanelInner}`}>
-        {isFr ? "Aucune définition FSA chargée pour la visualisation du diagramme." : "No FSA definition loaded for diagram visualization."}
+        {isFr ? "Aucune définition LBA chargée pour la visualisation du diagramme." : "No LBA definition loaded for diagram visualization."}
       </div>
     );
   }
 
-  // Build edges list grouped by (from -> to)
   const edgesMap = new Map<string, Edge>();
   if (definition.stateTransition) {
     definition.stateTransition.forEach((symbolMap, fromState) => {
-      symbolMap.forEach((nextStates, symbol) => {
-        nextStates.forEach((toState) => {
+      symbolMap.forEach((actionTrans, symbol) => {
+        actionTrans.nextStates.forEach((toState) => {
           const key = `${fromState}->${toState}`;
+          const actionStr = actionTrans.action.join(",");
+          const labelString = `${symbol}/${actionStr}`;
+          
           const existing = edgesMap.get(key);
           if (existing) {
-            if (!existing.labels.includes(symbol)) {
-              existing.labels.push(symbol);
+            if (!existing.labels.includes(labelString)) {
+              existing.labels.push(labelString);
             }
           } else {
-            edgesMap.set(key, { from: fromState, to: toState, labels: [symbol] });
+            edgesMap.set(key, { from: fromState, to: toState, labels: [labelString] });
           }
         });
       });
@@ -262,7 +265,7 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
     <div className={`w-full flex flex-col items-center justify-center p-3 border ${theme.border} rounded-lg ${theme.bgPanelInner} shadow-sm select-none`}>
       <div className="flex items-center justify-between w-full mb-1 px-2">
         <span className={`text-xs font-bold uppercase tracking-wider ${theme.fontMono} ${theme.textTitle}`}>
-          {isFr ? "⚙️ Diagramme de Transitions d'États FSA" : "⚙️ FSA State Transition Diagram"}
+          {isFr ? "⚙️ Diagramme de Transitions d'États LBA" : "⚙️ LBA State Transition Diagram"}
         </span>
         <div className="flex items-center gap-3">
           <span className={`text-[10px] ${theme.fontMono} ${theme.textMuted}`}>
@@ -290,9 +293,8 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
         onMouseLeave={handleMouseUp}
       >
         <defs>
-          {/* Arrowhead marker for edges */}
           <marker
-            id="fsa-arrow"
+            id="lba-arrow"
             viewBox="0 0 10 10"
             refX="6"
             refY="5"
@@ -303,7 +305,6 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
             <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284c7" />
           </marker>
 
-          {/* Start arrow marker */}
           <marker
             id="start-arrow"
             viewBox="0 0 10 10"
@@ -317,15 +318,13 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
           </marker>
         </defs>
 
-        {/* ── Render Edges (Transitions) ──────────────────────────────────── */}
         {edges.map((edge, idx) => {
           const source = nodePositions.get(edge.from);
           const target = nodePositions.get(edge.to);
           if (!source || !target) return null;
 
-          const labelText = edge.labels.join(", ");
+          const labelText = edge.labels.join(" | ");
 
-          // Self-loop (fromState === toState)
           if (edge.from === edge.to) {
             const loopX = source.x;
             const loopY = source.y - NODE_RADIUS;
@@ -338,7 +337,7 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
                   fill="none"
                   stroke="#0284c7"
                   strokeWidth="2"
-                  markerEnd="url(#fsa-arrow)"
+                  markerEnd="url(#lba-arrow)"
                 />
                 <text
                   x={loopX}
@@ -353,14 +352,12 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
             );
           }
 
-          // Check if reverse edge exists (bidirectional)
           const hasReverse = edgesMap.has(`${edge.to}->${edge.from}`);
 
           const dx = target.x - source.x;
           const dy = target.y - source.y;
           const dist = Math.hypot(dx, dy) || 1;
 
-          // Shorten path to touch node border, not center
           const offsetX = (dx / dist) * NODE_RADIUS;
           const offsetY = (dy / dist) * NODE_RADIUS;
 
@@ -369,7 +366,6 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
           const endX = target.x - offsetX;
           const endY = target.y - offsetY;
 
-          // Curve offset for bidirectional edges
           const curveOffset = hasReverse ? 25 : 0;
           const midX = (startX + endX) / 2 - (dy / dist) * curveOffset;
           const midY = (startY + endY) / 2 + (dx / dist) * curveOffset;
@@ -383,7 +379,7 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
                 fill="none"
                 stroke="#0284c7"
                 strokeWidth="2"
-                markerEnd="url(#fsa-arrow)"
+                markerEnd="url(#lba-arrow)"
               />
               <rect
                 x={midX - (labelText.length * 4 + 4)}
@@ -408,7 +404,6 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
           );
         })}
 
-        {/* ── Render Nodes (States) ────────────────────────────────────────── */}
         {nodes.map((node) => {
           const isInitial = definition.initial === node.id;
           const isFinal = definition.finalStates ? definition.finalStates.has(node.id) : false;
@@ -421,7 +416,6 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
               onMouseDown={(e) => handleMouseDown(node.id, e)}
               className="cursor-grab active:cursor-grabbing"
             >
-              {/* Initial State Entry Pointer Arrow */}
               {isInitial && (
                 <g transform="translate(-42, 0)">
                   <line
@@ -443,7 +437,6 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
                 </g>
               )}
 
-              {/* Active State Outer Glowing Pulse Ring */}
               {isActive && (
                 <circle
                   r={NODE_RADIUS + 6}
@@ -454,7 +447,6 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
                 />
               )}
 
-              {/* Base Circle */}
               <circle
                 r={NODE_RADIUS}
                 fill={isActive ? "#0369a1" : "#18181b"}
@@ -463,7 +455,6 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
                 className="transition-colors duration-200 shadow-lg"
               />
 
-              {/* Accept State Concentric Double Ring */}
               {isFinal && (
                 <circle
                   r={NODE_RADIUS - 4}
@@ -473,7 +464,6 @@ export default function FSAGraph({ definition, activeStates = [], theme, languag
                 />
               )}
 
-              {/* State Label Text */}
               <text
                 textAnchor="middle"
                 dominantBaseline="middle"

@@ -5,7 +5,9 @@ export interface LBADefinition{
     endSymbol: string,
     rightSymbol: string,
     leftSymbol: string,
-    stateTransition: Map<string, ActionTransition>
+    stateTransition: Map<string, 
+        Map<string, ActionTransition>
+        >
 
 }
 export interface ActionTransition{

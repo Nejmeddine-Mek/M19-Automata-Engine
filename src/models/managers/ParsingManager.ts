@@ -25,9 +25,12 @@ export class ParsingManager{
                 case 'PDA':
                     return null
                 case 'LBA':
+                    
                     const lbaConfig = machineType as LBAConfig
+                    console.log(lbaConfig.auxiliaryAlphabet)
                     const lbaParser = new LBAParser(
-                        [...lbaConfig.alphabet,
+                        [...(lbaConfig.alphabet || []),
+                            ...(lbaConfig.auxiliaryAlphabet || []),
                             lbaConfig.endSymbol,
                             lbaConfig.startSymbol,
                             lbaConfig.right,
@@ -37,6 +40,7 @@ export class ParsingManager{
                             lbaConfig.right,
                             lbaConfig.left
                         )
+                        console.log(lbaParser, lbaConfig)
                     return lbaParser.parseInstructions(code) 
                 case 'TM':
                     const tmConfig = machineType as TMConfig

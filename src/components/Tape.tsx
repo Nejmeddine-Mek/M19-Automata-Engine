@@ -58,6 +58,12 @@ export default function Tape({
 }: TapeProps) {
   const accent = getThreadColor(id, index, parentIndex);
   const displayTape = tapeData.length > 0 ? tapeData : ['⊔'];
+  const WINDOW_RADIUS = 5; // 5 cells left + 1 center + 5 cells right = 11 visible cells window
+  const visibleStartIndex = Math.max(0, headPosition - WINDOW_RADIUS);
+  const visibleEndIndex = Math.min(displayTape.length - 1, headPosition + WINDOW_RADIUS);
+
+  const visibleTape = displayTape.slice(visibleStartIndex, visibleEndIndex + 1);
+  const renderedHeadIndex = headPosition - visibleStartIndex;
 
   return (
     <div 
@@ -94,41 +100,46 @@ export default function Tape({
         </span>
       </div>
 
-      {/* Tape Cells */}
-      <div className="relative flex flex-col items-center justify-center py-2 overflow-x-auto">
-        <div className="flex items-center gap-1.5 px-4 py-1">
-          {displayTape.map((symbol, idx) => {
+      {/* Tape Cells Viewport Container (Windowed & Clipped Overflow) */}
+      <div className="relative w-full max-w-xl mx-auto overflow-hidden flex flex-col items-center justify-center py-2 min-h-[90px]">
+        {/* Sliding Tape Track (Windowed around headPosition) */}
+        <div
+          className="flex items-center gap-1.5 transition-transform duration-300 ease-in-out whitespace-nowrap"
+          style={{
+            transform: `translateX(calc(50% - ${renderedHeadIndex * 46 + 20}px))`,
+          }}
+        >
+          {visibleTape.map((symbol, i) => {
+            const idx = visibleStartIndex + i;
             const isHead = idx === headPosition;
 
             return (
               <div
                 key={idx}
-                className={`relative flex flex-col items-center justify-center w-10 h-11 rounded border transition-all duration-200 select-none
+                className={`relative flex flex-col items-center justify-center w-10 h-11 shrink-0 rounded border transition-all duration-200 select-none
                   ${theme.fontMono} text-sm font-bold
                   ${isHead 
-                    ? `${accent.bg} ${accent.border} border-2 ${accent.text} shadow-sm z-10 scale-105` 
+                    ? `${accent.bg} ${accent.border} border-2 ${accent.text} shadow-md z-10 scale-105` 
                     : `${theme.bgInput} ${theme.borderSubtle} ${theme.textInput} opacity-80`
                   }`}
               >
-                {/* Pointer Arrow */}
-                {isHead && (
-                  <div className="absolute -top-2 z-20 flex flex-col items-center transition-transform duration-150">
-                    <div className={`w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[6px] ${accent.text.replace('text-', 'border-t-')}`} />
-                  </div>
-                )}
-
                 <span>{symbol}</span>
-
+{/**
                 <span className={`absolute bottom-0.5 text-[9px] font-normal ${isHead ? accent.text : theme.textMuted}`}>
                   {idx}
                 </span>
+                */}
               </div>
             );
           })}
         </div>
 
-        <div className={`mt-1 text-[10px] font-bold uppercase tracking-wider ${theme.fontMono} ${accent.text}`}>
-          ▲ R/W Head
+        {/* Fixed Center R/W Head Indicator */}
+        <div className="flex flex-col items-center justify-center mt-1 z-20 pointer-events-none">
+          <div className={`w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[8px] ${accent.text.replace('text-', 'border-b-')}`} />
+          <div className={`text-[10px] font-bold uppercase tracking-wider ${theme.fontMono} ${accent.text}`}>
+            ▲ R/W Head
+          </div>
         </div>
       </div>
     </div>

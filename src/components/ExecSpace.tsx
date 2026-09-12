@@ -8,9 +8,11 @@ import type { FsaDefinition } from '../models/interfaces/FsaDefinition';
 import type { PDADefinition } from '../models/interfaces/PDADefinition';
 import type { LBADefinition } from '../models/interfaces/LBADefinition';
 import type { TMDefinition } from '../models/interfaces/TMDefinition';
+import LBAGraph from './LBAGraph';
 
 export interface ThemeConfig {
   bgApp: string;
+  bgPanel: string;
   bgSidebar: string;
   bgPanelInner: string;
   bgInput: string;
@@ -190,9 +192,9 @@ export function ExecSpace({
           >
             {isFr ? "Arrêter" : "Halt"}
           </button>
-
+          
           {/* Diagram Toggle Button */}
-          {machineDefinition && 'epsilon' in machineDefinition && (
+          {machineDefinition &&('epsilon' in machineDefinition || 'endSymbol' in machineDefinition )&& (
             <button
               type="button"
               onClick={() => setShowDiagram(!showDiagram)}
@@ -201,6 +203,16 @@ export function ExecSpace({
               }`}
             >
               {showDiagram ? (isFr ? 'Masquer Schéma' : 'Hide Diagram') : (isFr ? 'Afficher Schéma' : 'Show Diagram')}
+            </button>
+          )}
+          {/*  Operations button*/}
+          {machineDefinition &&'epsilon' in machineDefinition&& (
+            <button
+              type="button"
+              onClick={() => console.log('show operations pop up')}
+className="px-3 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider rounded transition-all shadow-sm cursor-pointer bg-indigo-600 text-white hover:bg-indigo-500 flex items-center gap-1.5"
+            >
+              {(isFr ? 'Opérations et algorithmes' : 'Operations & Algorithms')}
             </button>
           )}
         </div>
@@ -227,6 +239,16 @@ export function ExecSpace({
       {/* 2. Visualizer Workspace */}
       <div className={`flex-1 w-full ${theme.bgPanelInner} border ${theme.border} rounded-lg p-6 flex flex-col gap-6 items-center justify-start shadow-sm overflow-y-auto`}>
         {/* FSA State Transition Diagram */}
+        {showDiagram && machineDefinition && 'endSymbol' in machineDefinition && (
+          <div className='w-full'>
+            <LBAGraph
+              definition={machineDefinition as LBADefinition}
+              activeStates={activeTapes.map(tape => tape.currentState).filter(Boolean) as string[]}
+              theme={theme}
+              language={language} 
+            />
+          </div>
+        )}
         {showDiagram && machineDefinition && 'epsilon' in machineDefinition && (
           <div className="w-full">
             <FSAGraph

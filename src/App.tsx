@@ -189,7 +189,7 @@ export default function App() {
           </div>
 
           {/* Config Window */}
-          <div className={`${showConfigWindow ? "flex-1" : "flex-none"} p-4 flex flex-col transition-all duration-200 min-h-0`}>
+          <div className={`${showConfigWindow ? "flex-1" : "flex-none" } border-b p-4 flex flex-col transition-all duration-200 min-h-0`}>
             {/* Header / Toggle Button */}
             <button
               onClick={() => SetShowConfigWindow(!showConfigWindow)}
@@ -220,6 +220,7 @@ export default function App() {
               </div>
             )}
           </div>
+          
         </section>
       </main>
 
