@@ -24,9 +24,9 @@ export default function Config({ theme, language = "en", onChangeConfig }: Confi
   const [stackAlphabet, setStackAlphabet] = useState('0, 1, Z0');
 
   // LBA Specific
-  const [leftBoundSymbol, setLeftBoundSymbol] = useState('<');
-  const [rightBoundSymbol, setRightBoundSymbol] = useState('>');
-  const [auxiliaryAlphabet, setAuxiliaryAlphabet] = useState('x, y')
+  const [leftBoundSymbol, setLeftBoundSymbol] = useState('C');
+  const [rightBoundSymbol, setRightBoundSymbol] = useState('$');
+  const [auxiliaryAlphabet, setAuxiliaryAlphabet] = useState('x, y, z')
   // TM Specific
   const [blankSymbol, setBlankSymbol] = useState('⊔');
   const [rightSymbol, setRightSymbol] = useState('R')
@@ -279,9 +279,14 @@ export default function Config({ theme, language = "en", onChangeConfig }: Confi
             <option value="FSA" className={`${theme.bgInput} ${theme.border} ${theme.textInput}`}>
               {isFr ? "Automate à États Finis (FSA)" : "Finite State Automata (FSA)"}
             </option>
-            <option value="PDA" className={`${theme.bgInput} ${theme.border} ${theme.textInput}`}>
-              {isFr ? "Automate à Pile (PDA)" : "PushDown Automata (PDA)"}
-            </option>
+            {/**
+             * 
+             * PushDown Automata are dropped from our list of objectives, we focus on vertical development
+             * on Finite state automata, by adding algorithms, and some modernization as a chatbot functionality
+             * if you ever want to develop a PushDown automata option, the option in the drop down menu goes here
+             * you could find the empty files and functions of the PDA parser and the engine Execution step in the Engine file. 
+             * 
+             */}
             <option value="LBA" className={`${theme.bgInput} ${theme.border} ${theme.textInput}`}>
               {isFr ? "Automate Borné Linéaire (LBA)" : "Linear Bounded Automaton (LBA)"}
             </option>

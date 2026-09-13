@@ -84,8 +84,7 @@ export class LBAParser{
             return null;
         }
 
-        if ((readSymbol === this.beginningSymbol && actionSymbol === this.leftSymbol) || 
-            (readSymbol === this.endSymbol && actionSymbol === this.rightSymbol)) {
+        if ((readSymbol === this.beginningSymbol && actionSymbol === this.leftSymbol)) {
             console.log('action not allowed');
             return null;
         }

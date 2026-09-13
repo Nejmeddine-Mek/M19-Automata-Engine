@@ -8,6 +8,7 @@ import type { FsaDefinition } from '../models/interfaces/FsaDefinition';
 import type { PDADefinition } from '../models/interfaces/PDADefinition';
 import type { LBADefinition } from '../models/interfaces/LBADefinition';
 import type { TMDefinition } from '../models/interfaces/TMDefinition';
+import OperationsModal from './OperationsModal';
 import LBAGraph from './LBAGraph';
 
 export interface ThemeConfig {
@@ -63,6 +64,9 @@ export function ExecSpace({
   const [animSpeed, setAnimSpeed] = useState<number>(800); // Speed in ms
   const [showDiagram, setShowDiagram] = useState<boolean>(true);
 
+  const [ShowOperationsModal, setShowOperationsModal] = useState(false);
+  const [wizardStep, setWizardStep] = useState(1);
+  
   const isFr = language === "fr";
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -209,7 +213,7 @@ export function ExecSpace({
           {machineDefinition &&'epsilon' in machineDefinition&& (
             <button
               type="button"
-              onClick={() => console.log('show operations pop up')}
+              onClick={() => setShowOperationsModal(true)}
 className="px-3 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider rounded transition-all shadow-sm cursor-pointer bg-indigo-600 text-white hover:bg-indigo-500 flex items-center gap-1.5"
             >
               {(isFr ? 'Opérations et algorithmes' : 'Operations & Algorithms')}
@@ -300,6 +304,9 @@ className="px-3 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider 
           </span>
         )}
       </div>
+      {ShowOperationsModal && (
+        <OperationsModal isOpen={ShowOperationsModal} onClose={() => setShowOperationsModal(false)} definition={machineDefinition as FsaDefinition} theme={theme} language={language}/>
+      )}
     </div>
   );
 }

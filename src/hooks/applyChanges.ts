@@ -73,8 +73,8 @@ export function applyChanges(
         blankSymbol: parent ? parent.blankSymbol : null,
         stack: parent && parent.stack ? [...parent.stack] : null,
       };
-
-      ensureTapeBounds(forkedTape);
+      if(forkedTape.blankSymbol)
+        ensureTapeBounds(forkedTape);
       result.push(forkedTape);
     }
   }
