@@ -3,6 +3,7 @@ import type { FsaDefinition } from "../models/interfaces/FsaDefinition";
 import type { ThemeType } from "../App";
 import FSAGraph from "./FSAGraph";
 import { mirrorFSA } from "../algorithms/mirror";
+import { determinizeFSA } from "../algorithms/NFAtoDFA";
 
 interface OperationsModalProps {
   isOpen: boolean;
@@ -60,12 +61,7 @@ export default function OperationsModal({
     setCurrentStepIndex(0);
     
     // TODO: Implement NFA to DFA subset construction here
-    const mockSteps: OperationStep[] = [
-      {
-        def: definition,
-        remark: isFr ? "Calcul des epsilon-clôtures..." : "Computing epsilon-closures...",
-      }
-    ];
+    const mockSteps: OperationStep[] = determinizeFSA(definition, language)
     setOperationSteps(mockSteps);
   };
 
