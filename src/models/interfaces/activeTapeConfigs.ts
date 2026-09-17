@@ -5,6 +5,7 @@ export interface ActiveTape {
   tapeValue: string[];           // Array of symbols currently on the tape
   currentHeadPosition: number;   // Current R/W head index on the tape
   currentState?: string;         // Current state name (e.g. "q0", "q1")
+  lastInstruction?: string;      // Last executed transition/instruction
   status?: 'ACTIVE' | 'ACCEPTED' | 'REJECTED' | 'HALTED'; // Engine thread status
   blankSymbol: string | null;
   stack: string[] | null;
@@ -16,4 +17,5 @@ export interface TapeStepChange {
   currentTapeValue: string;
   parentId: string;
   currentState?: string;
+  lastInstruction?: string;
 }

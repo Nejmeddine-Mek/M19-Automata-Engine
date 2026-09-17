@@ -2,118 +2,116 @@ import type { ActionTransition, TMDefinition } from "../interfaces/TMDefinition"
 import CleaningService from "../services/CleaningService"
 import { containsForbiddenChar } from "../services/ForbiddenCharactersCheck"
 
-export class TuringMachineParser{
-    private readonly DIRECTIVES_SEPARATOR = ":"
-    private readonly COMMA = ","
+export class TuringMachineParser {
+  private readonly DIRECTIVES_SEPARATOR = ":"
+  private readonly COMMA = ","
+  
+  private code: string
+  private rightSymbol: string
+  private leftSymbol: string
+  private blankSymbol: string
+  private alphabet: Set<string>
+
+  public constructor(alphabet: string[], code: string, rightSymbol: string, leftSymbol: string, blankSymbol: string) {
+    this.alphabet = new Set([...alphabet, rightSymbol, leftSymbol, blankSymbol])
+    this.code = code
+    this.rightSymbol = rightSymbol
+    this.leftSymbol = leftSymbol
+    this.blankSymbol = blankSymbol
+  }
+
+  public parseInstructions(): TMDefinition {
+    const cleanedCode = CleaningService(this.code)
     
-    private code: string
-    private rightSymbol: string
-    private leftSymbol: string
-    private blankSymbol: string
-    private alphabet: Set<string>
-    /*
-    **
-    NOTE: ONE MUST PASS ONLY ALPHABET IN THE CTOR, THE CTOR ADDS RIGHT SYMBOL AND LEFT SYMBOL TO THE ALPHABET BY ITSELF
-        - IT ISN'T A MAJOR ISSUE, AS THE SET REMOVES DUPLICATES ANYWAY
-    **
-    */
-    public constructor(alphabet: string[], code: string, rightSymbol: string, leftSymbol: string, blankSymbol: string){
-        this.alphabet = new Set([...alphabet, rightSymbol, leftSymbol, blankSymbol])
-        this.code = code
-        this.rightSymbol = rightSymbol
-        this.leftSymbol = leftSymbol
-        this.blankSymbol = blankSymbol
+    if (cleanedCode.length === 0) {
+      throw new Error("TM Parser Error: Code is empty or contains only comments/whitespace.");
+    }
+    if (cleanedCode.length < 2) {
+      throw new Error("TM Parser Error: Incomplete code. Must include both 'initial:' and 'final:' directives.");
     }
 
-    public parseInstructions(): TMDefinition | null {
-        const cleanedCode = CleaningService(this.code)
-        // NOW WE NEED TO PARSE THE CODE
+    const finalStates: Set<string> = new Set();
+    let initialState: string
 
-        
-        if(cleanedCode.length === 0)
-            return null
-        
-        const finalStates: Set<string> = new Set();
-        let initialState: string
-        // let's enforce the INITIAL, FINAL FORMAT HERE TOO
-        // INITIAL DIRECTIVE -------------------------
-        let lineTokens = cleanedCode[0].split(this.DIRECTIVES_SEPARATOR)
-        
-        if(lineTokens[0].toLocaleLowerCase() !== "initial"){
-            // TODO: throw a compile time error, no initial state declared
-        }
-
-        if (!lineTokens[1]) {
-            // TODO: throw error - directive missing value/separator
-            return null
-        }
-
-        //WE CAN MAKE SURE IT IS A SINGLETON BY CHECKING FOR SEPARATORS
-        if(containsForbiddenChar(lineTokens[1].trim())){
-            //TODO: throw an error, initial state contains forbidden chars
-        }
-
-        initialState = lineTokens[1].trim()
-        // FINAL DIRECTIVE -------------------
-        lineTokens = cleanedCode[1].split(this.DIRECTIVES_SEPARATOR)
-        if(lineTokens[0].toLocaleLowerCase() !== "final"){
-            //TODO: throw a compile time error, no final states declared
-
-        } 
-
-        if (!lineTokens[1]) {
-            // TODO: throw error or allow empty final states depending on your DSL spec
-        } else {
-            lineTokens[1]
-                .split(this.COMMA)
-                .map(token => token.trim())
-                .filter(token => token.length > 0)
-                .forEach(token => finalStates.add(token));
-        }
-        // TODO: Sanity check of the initial state!
-        const instructions = new Map()
-        for(let i = 2; i < cleanedCode.length; ++i){
-            console.log(lineTokens)
-            lineTokens = cleanedCode[i].split(this.COMMA)
-            if(lineTokens.length !== 4){
-                // TODO: throw an error, incompatible instruction format
-                console.log("not compliant in length")
-                return null
-            }
-            let stateInnerMap: Map<string, ActionTransition> /*we use any for now */ = instructions.get(lineTokens[0]) || new Map()
-            if(!this.alphabet.has(lineTokens[1].trim())){
-                // TODO: throw an error, symbol does not belong to alphabet
-                console.log("letter not in alphabet", lineTokens[1])
-                return null
-            }
-            
-            let currentAction: ActionTransition = stateInnerMap.get(lineTokens[1].trim()) || {action: [], nextStates: []}
-            if(!this.alphabet.has(lineTokens[2].trim()) /* || moveSymbols.has(lineTokens[2]) */){
-                //TODO: unrecognized symbol, error
-                console.log(lineTokens[2] ," not recognized")
-                return null
-            }
-            // fill the actions object
-            currentAction.action.push(lineTokens[2].trim())
-            currentAction.nextStates.push(lineTokens[3].trim())
-            console.log(currentAction)
-            // fill the state map
-            stateInnerMap.set(lineTokens[1].trim(),currentAction)
-            // add the states map to the instructions map
-            instructions.set(lineTokens[0].trim(),stateInnerMap)
-
-
-        }
-
-        return {
-            initial: initialState,
-            finalStates: finalStates,
-            rightSymbol: this.rightSymbol,
-            leftSymbol: this.leftSymbol,
-            blankSymbol: this.blankSymbol,
-            stateTransitions: instructions
-        }
+    // 1. INITIAL DIRECTIVE -------------------------
+    let lineTokens = cleanedCode[0].split(this.DIRECTIVES_SEPARATOR).map(t => t.trim())
+    
+    if (lineTokens[0].toLowerCase() !== "initial") {
+      throw new Error(`TM Parser Error (Line 1): Expected 'initial:' directive, but found '${lineTokens[0]}'.`);
     }
 
-    public getAlphabet(): Set<string>{ return this.alphabet }
+    if (!lineTokens[1] || lineTokens[1].length === 0) {
+      throw new Error("TM Parser Error (Line 1): 'initial:' directive is missing initial state name.");
+    }
+
+    if (containsForbiddenChar(lineTokens[1])) {
+      throw new Error(`TM Parser Error (Line 1): Initial state '${lineTokens[1]}' contains forbidden special characters.`);
+    }
+
+    initialState = lineTokens[1]
+
+    // 2. FINAL DIRECTIVE -------------------
+    lineTokens = cleanedCode[1].split(this.DIRECTIVES_SEPARATOR).map(t => t.trim())
+    if (lineTokens[0].toLowerCase() !== "final") {
+      throw new Error(`TM Parser Error (Line 2): Expected 'final:' directive, but found '${lineTokens[0]}'.`);
+    } 
+
+    if (lineTokens[1]) {
+      lineTokens[1]
+        .split(this.COMMA)
+        .map(token => token.trim())
+        .filter(token => token.length > 0)
+        .forEach(token => {
+          if (containsForbiddenChar(token)) {
+            throw new Error(`TM Parser Error (Line 2): Final state '${token}' contains forbidden special characters.`);
+          }
+          finalStates.add(token);
+        });
+    }
+
+    // 3. INSTRUCTIONS -------------------
+    const instructions = new Map<string, Map<string, ActionTransition>>()
+    for (let i = 2; i < cleanedCode.length; ++i) {
+      const rawTokens = cleanedCode[i].split(this.COMMA).map(t => t.trim())
+      if (rawTokens.length !== 4) {
+        throw new Error(`TM Parser Error (Line ${i + 1}): Instruction line must have 4 comma-separated tokens [State, ReadSymbol, ActionSymbol/Direction, NextState]. Found ${rawTokens.length} tokens: "${cleanedCode[i]}".`);
+      }
+
+      const [state, readSymbol, actionSymbol, nextState] = rawTokens;
+
+      if (containsForbiddenChar(state) || containsForbiddenChar(nextState)) {
+        throw new Error(`TM Parser Error (Line ${i + 1}): State names '${state}' or '${nextState}' contain forbidden special characters.`);
+      }
+
+      if (!this.alphabet.has(readSymbol)) {
+        const alphStr = Array.from(this.alphabet).join(", ");
+        throw new Error(`TM Parser Error (Line ${i + 1}): Read symbol '${readSymbol}' is not present in the allowed tape alphabet {${alphStr}}.`);
+      }
+      
+      if (!this.alphabet.has(actionSymbol)) {
+        const alphStr = Array.from(this.alphabet).join(", ");
+        throw new Error(`TM Parser Error (Line ${i + 1}): Action symbol '${actionSymbol}' is unrecognized. Must be a symbol to write or direction ('${this.leftSymbol}', '${this.rightSymbol}') in {${alphStr}}.`);
+      }
+
+      let stateInnerMap: Map<string, ActionTransition> = instructions.get(state) || new Map()
+      let currentAction: ActionTransition = stateInnerMap.get(readSymbol) || { action: [], nextStates: [] }
+
+      currentAction.action.push(actionSymbol)
+      currentAction.nextStates.push(nextState)
+
+      stateInnerMap.set(readSymbol, currentAction)
+      instructions.set(state, stateInnerMap)
+    }
+
+    return {
+      initial: initialState,
+      finalStates: finalStates,
+      rightSymbol: this.rightSymbol,
+      leftSymbol: this.leftSymbol,
+      blankSymbol: this.blankSymbol,
+      stateTransitions: instructions
+    }
+  }
+
+  public getAlphabet(): Set<string> { return this.alphabet }
 }

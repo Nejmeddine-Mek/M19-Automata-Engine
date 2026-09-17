@@ -8,6 +8,7 @@ interface TapeProps {
   tapeData: string[];
   headPosition?: number;
   currentState?: string;
+  lastInstruction?: string;
   animationSpeed?: number;
   status?: 'ACTIVE' | 'ACCEPTED' | 'REJECTED' | 'HALTED';
 }
@@ -51,14 +52,15 @@ export default function Tape({
   theme,
   index,
   parentIndex,
-  tapeData = ['⊔'],
+  tapeData = [],
   headPosition = 0,
   currentState,
+  lastInstruction,
   status = 'ACTIVE',
 }: TapeProps) {
   const accent = getThreadColor(id, index, parentIndex);
-  const displayTape = tapeData.length > 0 ? tapeData : ['⊔'];
-  const WINDOW_RADIUS = 5; // 5 cells left + 1 center + 5 cells right = 11 visible cells window
+  const displayTape = tapeData;
+  const WINDOW_RADIUS = 5;
   const visibleStartIndex = Math.max(0, headPosition - WINDOW_RADIUS);
   const visibleEndIndex = Math.min(displayTape.length - 1, headPosition + WINDOW_RADIUS);
 
@@ -70,12 +72,11 @@ export default function Tape({
       className={`w-full flex flex-col p-3 ${theme.bgPanelInner} border ${theme.border} rounded-lg shadow-sm ${theme.fontSans} transition-all duration-200`}
     >
       {/* Thread Metadata Header */}
-      <div className="flex items-center justify-between mb-2 px-1">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between mb-2 px-1 gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className={`px-2 py-0.5 text-[10px] font-bold ${theme.fontMono} rounded uppercase border ${accent.border} ${accent.bg} ${accent.text}`}>
             Thread #{index}-{Math.abs(hashString(id) % 1000)}
           </span>
-
 
           {parentIndex !== undefined && (
             <span className={`text-[11px] ${theme.fontMono} ${theme.textMuted}`}>
@@ -85,6 +86,11 @@ export default function Tape({
           {currentState && (
             <span className={`px-2 py-0.5 text-[10px] font-bold ${theme.fontMono} rounded bg-zinc-800/90 border border-zinc-700 text-cyan-400 shadow-xs`}>
               State: <span className="text-zinc-100">{currentState}</span>
+            </span>
+          )}
+          {lastInstruction && (
+            <span className={`px-2 py-0.5 text-[10px] font-bold ${theme.fontMono} rounded bg-amber-500/10 border border-amber-500/30 text-amber-400`}>
+              Instr: <span className="text-amber-200">{lastInstruction}</span>
             </span>
           )}
           {status && status !== 'ACTIVE' && (
@@ -124,11 +130,6 @@ export default function Tape({
                   }`}
               >
                 <span>{symbol}</span>
-{/**
-                <span className={`absolute bottom-0.5 text-[9px] font-normal ${isHead ? accent.text : theme.textMuted}`}>
-                  {idx}
-                </span>
-                */}
               </div>
             );
           })}

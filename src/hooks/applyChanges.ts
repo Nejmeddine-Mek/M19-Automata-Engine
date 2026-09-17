@@ -34,6 +34,7 @@ export function applyChanges(
         tapeValue: [...existing.tapeValue],
         index: result.length,
         currentState: change.currentState ?? existing.currentState,
+        lastInstruction: change.lastInstruction ?? existing.lastInstruction,
       };
 
       if (change.nextHeadPosition > 0) {
@@ -44,7 +45,7 @@ export function applyChanges(
         // Write symbol operation
         updated.tapeValue[updated.currentHeadPosition] = change.currentTapeValue;
       }
-      if(updated.blankSymbol)
+      if (updated.blankSymbol)
         ensureTapeBounds(updated);
       result.push(updated);
     } else {
@@ -69,11 +70,12 @@ export function applyChanges(
         tapeValue,
         currentHeadPosition: headPos,
         currentState: change.currentState ?? parent?.currentState,
+        lastInstruction: change.lastInstruction ?? parent?.lastInstruction,
         status: "ACTIVE",
         blankSymbol: parent ? parent.blankSymbol : null,
         stack: parent && parent.stack ? [...parent.stack] : null,
       };
-      if(forkedTape.blankSymbol)
+      if (forkedTape.blankSymbol)
         ensureTapeBounds(forkedTape);
       result.push(forkedTape);
     }

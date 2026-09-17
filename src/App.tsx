@@ -103,7 +103,6 @@ export default function App() {
     };
   };
 
-  // Hook owns all engine instances and immutable state snapshots
   const engine = useAutomataEngine();
 
   const handleExecute = (inputTape: string, animationDelay: number) => {
@@ -112,6 +111,46 @@ export default function App() {
       return;
     }
     engine.execute(machineConfig, code, inputTape, animationDelay);
+  };
+
+  const activeInstructions = engine.activeTapes
+    .map((t) => t.lastInstruction)
+    .filter(Boolean) as string[];
+
+  const handleSaveAutomaton = () => {
+    const data = {
+      version: "1.0",
+      machineConfig,
+      code,
+    };
+    const jsonStr = JSON.stringify(data, null, 2);
+
+    const blob = new Blob([jsonStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `m19_${machineConfig?.machineType?.toLowerCase() || "automaton"}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    try {
+      localStorage.setItem("m19_saved_automaton", jsonStr);
+    } catch (e) {
+      console.error("Failed to save automaton to localStorage", e);
+    }
+  };
+
+  const handleLoadAutomaton = (jsonStr: string) => {
+    try {
+      const parsed = JSON.parse(jsonStr);
+      if (parsed.machineConfig) setMachineConfig(parsed.machineConfig);
+      else if (parsed.config) setMachineConfig(parsed.config);
+
+      if (typeof parsed.code === "string") setCode(parsed.code);
+    } catch (e) {
+      console.error("Invalid JSON content", e);
+      alert(settings.language === "fr" ? "Fichier JSON invalide." : "Invalid JSON file structure.");
+    }
   };
 
   return (
@@ -181,7 +220,11 @@ export default function App() {
               <div className={`flex-1 ${activeTheme.bgPanelInner} rounded-lg p-3 text-sm ${activeTheme.fontMono} ${activeTheme.textMuted} ${activeTheme.borderSubtle} border overflow-hidden flex flex-col h-64`}>
                 <IDE 
                   code={code} 
-                  onChange={setCode} 
+                  onChange={setCode}
+                  activeInstructions={activeInstructions}
+                  language={settings.language}
+                  onSave={handleSaveAutomaton}
+                  onLoad={handleLoadAutomaton}
                   THEME={activeTheme} 
                 />
               </div>

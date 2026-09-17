@@ -65,7 +65,6 @@ export function ExecSpace({
   const [showDiagram, setShowDiagram] = useState<boolean>(true);
 
   const [ShowOperationsModal, setShowOperationsModal] = useState(false);
-  const [wizardStep, setWizardStep] = useState(1);
   
   const isFr = language === "fr";
 
@@ -74,7 +73,7 @@ export function ExecSpace({
     onExecute(inputArg, animSpeed);
   };
 
-  const { isExecuting, isHalted, isAccepted, isRejected } = executionStatus;
+  const { isExecuting, isHalted, isAccepted, isRejected, errorMessage } = executionStatus;
 
   return (
     <div className={`w-full flex flex-col ${theme.bgPanelInner} border ${theme.border} rounded-lg shadow-sm ${theme.fontSans}`}>
@@ -209,12 +208,12 @@ export function ExecSpace({
               {showDiagram ? (isFr ? 'Masquer Schéma' : 'Hide Diagram') : (isFr ? 'Afficher Schéma' : 'Show Diagram')}
             </button>
           )}
-          {/*  Operations button*/}
+          {/* Operations button */}
           {machineDefinition &&'epsilon' in machineDefinition&& (
             <button
               type="button"
               onClick={() => setShowOperationsModal(true)}
-className="px-3 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider rounded transition-all shadow-sm cursor-pointer bg-indigo-600 text-white hover:bg-indigo-500 flex items-center gap-1.5"
+              className="px-3 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider rounded transition-all shadow-sm cursor-pointer bg-indigo-600 text-white hover:bg-indigo-500 flex items-center gap-1.5"
             >
               {(isFr ? 'Opérations et algorithmes' : 'Operations & Algorithms')}
             </button>
@@ -222,8 +221,21 @@ className="px-3 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider 
         </div>
       </form>
 
+      {/* ── Prominent Error Banner Display ────────────────────────── */}
+      {errorMessage && (
+        <div className="mx-3 my-2 p-3 bg-rose-950/90 border border-rose-600 rounded-md text-xs font-mono text-rose-200 flex items-start gap-2.5 shadow-md">
+          <span className="text-lg leading-none shrink-0">⚠️</span>
+          <div className="flex-1">
+            <span className="font-bold block uppercase tracking-wider text-rose-400 mb-0.5">
+              {isFr ? "Erreur de Syntaxe / Exécution" : "Syntax / Execution Error"}
+            </span>
+            <span className="leading-relaxed">{errorMessage}</span>
+          </div>
+        </div>
+      )}
+
       {/* Status Bar Banner */}
-      {(isAccepted || isRejected || isHalted) && (
+      {!errorMessage && (isAccepted || isRejected || isHalted) && (
         <div className={`px-4 py-1.5 text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-between border-b ${theme.borderSubtle} ${
           isAccepted ? 'bg-emerald-950/60 text-emerald-400' : isRejected ? 'bg-rose-950/60 text-rose-400' : 'bg-amber-950/60 text-amber-400'
         }`}>
@@ -281,6 +293,7 @@ className="px-3 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider 
                       tapeData={tape.tapeValue}
                       headPosition={tape.currentHeadPosition}
                       currentState={tape.currentState}
+                      lastInstruction={tape.lastInstruction}
                       status={tape.status}
                       animationSpeed={animSpeed}
                     />
@@ -300,7 +313,7 @@ className="px-3 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider 
           </div>
         ) : (
           <span className={`text-sm ${theme.fontMono} ${theme.textMuted}`}>
-            No execution state loaded. Enter input above and click Load & Init.
+            {isFr ? "Aucun état d'exécution chargé. Entrez une chaîne et cliquez sur Charger & Init." : "No execution state loaded. Enter input above and click Load & Init."}
           </span>
         )}
       </div>

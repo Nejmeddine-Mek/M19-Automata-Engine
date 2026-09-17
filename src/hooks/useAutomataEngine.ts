@@ -14,22 +14,20 @@ import type { PDADefinition } from "../models/interfaces/PDADefinition";
 import type { LBADefinition } from "../models/interfaces/LBADefinition";
 
 export interface EngineAPI {
-  // ── Immutable State (read-only by React) ──────────────────
-  activeTapes: ActiveTape[];           // Current tape snapshots
-  executionStatus: ExecutionStatus;    // { isExecuting, isHalted, isAccepted, isRejected, stepCount }
-  canStepBack: boolean;                // History has previous states
-  canStepForward: boolean;             // History has future states
-  machineDefinition: FsaDefinition | PDADefinition | LBADefinition | TMDefinition | null;              // Parsed machine definition object
+  activeTapes: ActiveTape[];
+  executionStatus: ExecutionStatus;
+  canStepBack: boolean;
+  canStepForward: boolean;
+  machineDefinition: FsaDefinition | PDADefinition | LBADefinition | TMDefinition | null;
 
-  // ── Actions (called by React event handlers) ──────────────
   execute: (config: FSAConfig | PDAConfig | LBAConfig | TMConfig, code: string, input: string, animationDelay: number) => void;
-  step: () => void;                    // Single step forward
-  run: () => void;                     // Start continuous execution
-  pause: () => void;                   // Pause continuous execution
-  halt: () => void;                    // Stop entirely
-  reset: () => void;                   // Clear all state
-  stepBack: () => void;                // History: go back
-  stepForward: () => void;             // History: go forward
+  step: () => void;
+  run: () => void;
+  pause: () => void;
+  halt: () => void;
+  reset: () => void;
+  stepBack: () => void;
+  stepForward: () => void;
 }
 
 export function useAutomataEngine(): EngineAPI {
@@ -41,6 +39,7 @@ export function useAutomataEngine(): EngineAPI {
     isAccepted: false,
     isRejected: false,
     stepCount: 0,
+    errorMessage: null,
   });
 
   const [historyState, setHistoryState] = useState({
@@ -53,7 +52,6 @@ export function useAutomataEngine(): EngineAPI {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const animationDelayRef = useRef<number>(250);
 
-  // Keep a ref to the latest activeTapes to prevent stale closures in async interval ticks
   const activeTapesRef = useRef<ActiveTape[]>(activeTapes);
   useEffect(() => {
     activeTapesRef.current = activeTapes;
@@ -84,123 +82,187 @@ export function useAutomataEngine(): EngineAPI {
   }, [pause]);
 
   const step = useCallback(() => {
-    const execMgr = executionManagerRef.current;
-    if (!execMgr || executionStatus.isHalted) return;
+    try {
+      const execMgr = executionManagerRef.current;
+      if (!execMgr || executionStatus.isHalted) return;
 
-    const machineType = execMgr.machineType;
-    const changes = execMgr.runStep();
+      const machineType = execMgr.machineType;
+      const changes = execMgr.runStep();
 
-    if (machineType === "FSA") {
-      if (changes.length === 0) {
-        // Engine returned no new transitions (dead end / stuck)
-        pause();
-        setExecutionStatus((prev) => ({
-          ...prev,
-          isHalted: true,
-          isExecuting: false,
-          isRejected: true,
-        }));
-        return;
-      }
+      if (machineType === "FSA") {
+        if (changes.length === 0) {
+          // Check if any active tape is at End-of-Input AND in a final state (or epsilon-closure to final)
+          const currentTapes = activeTapesRef.current;
+          const eoi = computeEOI(currentTapes);
+          const finalStates = execMgr.tapesAtFinalState();
+          const fsaDef = execMgr.getDefinition() as FsaDefinition;
 
-      const nextTapes = applyChanges(activeTapesRef.current, changes);
-      const eoi = computeEOI(nextTapes);
-      const finalStates = execMgr.tapesAtFinalState();
+          let isAccepted = false;
+          for (const tape of currentTapes) {
+            if (!eoi.has(tape.id)) continue;
 
-      let isAccepted = false;
-      for (const id of eoi) {
-        if (finalStates.has(id)) {
-          isAccepted = true;
-          break;
-        }
-      }
+            if (finalStates.has(tape.id)) {
+              isAccepted = true;
+              break;
+            }
 
-      // Rejection: All active tape threads reached End of Input without any thread accepting
-      const allReachedEOI = nextTapes.length > 0 && nextTapes.every((t) => eoi.has(t.id));
-      const isRejected = !isAccepted && allReachedEOI;
+            // Resolve Epsilon Closure for the tape's state
+            if (fsaDef) {
+              const visited = new Set<string>();
+              const queue = [tape.currentState || fsaDef.initial];
+              while (queue.length > 0) {
+                const st = queue.shift()!;
+                if (visited.has(st)) continue;
+                visited.add(st);
 
-      // Pass updated cell slices back to the engine for next cycle
-      const maxLen = (execMgr.getDefinition() as FsaDefinition)?.maxEntryLength ?? 1;
-      const cellValues = nextTapes.map((t) =>
-        t.tapeValue.slice(t.currentHeadPosition, t.currentHeadPosition + maxLen).join("")
-      );
-      execMgr.setNewTapeCellValues(cellValues);
+                if (fsaDef.finalStates.has(st)) {
+                  isAccepted = true;
+                  break;
+                }
 
-      // Update React State & History
-      setActiveTapes(nextTapes);
-      historyRef.current.addStates(nextTapes);
-      updateHistoryState();
+                const innerMap = fsaDef.stateTransition.get(st);
+                const epsClosure = innerMap?.get(fsaDef.epsilon);
+                if (epsClosure) {
+                  queue.push(...epsClosure);
+                }
+              }
+              if (isAccepted) break;
+            }
+          }
 
-      setExecutionStatus((prev) => {
-        const nextStep = prev.stepCount + 1;
-        if (isAccepted) {
           pause();
+          setExecutionStatus((prev) => ({
+            ...prev,
+            isHalted: true,
+            isExecuting: false,
+            isAccepted: isAccepted,
+            isRejected: !isAccepted,
+          }));
+          return;
+        }
+
+        const nextTapes = applyChanges(activeTapesRef.current, changes);
+        const eoi = computeEOI(nextTapes);
+        const finalStates = execMgr.tapesAtFinalState();
+
+        let isAccepted = false;
+        for (const id of eoi) {
+          if (finalStates.has(id)) {
+            isAccepted = true;
+            break;
+          }
+        }
+
+        const allReachedEOI = nextTapes.length > 0 && nextTapes.every((t) => eoi.has(t.id));
+        const isRejected = !isAccepted && allReachedEOI;
+
+        const maxLen = (execMgr.getDefinition() as FsaDefinition)?.maxEntryLength ?? 1;
+        const cellValues = nextTapes.map((t) =>
+          t.tapeValue.slice(t.currentHeadPosition, t.currentHeadPosition + maxLen).join("")
+        );
+        execMgr.setNewTapeCellValues(cellValues);
+
+        setActiveTapes(nextTapes);
+        historyRef.current.addStates(nextTapes);
+        updateHistoryState();
+
+        setExecutionStatus((prev) => {
+          const nextStep = prev.stepCount + 1;
+          if (isAccepted) {
+            pause();
+            return {
+              ...prev,
+              stepCount: nextStep,
+              isAccepted: true,
+              isHalted: true,
+              isExecuting: false,
+            };
+          }
+          if (isRejected) {
+            pause();
+            return {
+              ...prev,
+              stepCount: nextStep,
+              isRejected: true,
+              isHalted: true,
+              isExecuting: false,
+            };
+          }
           return {
             ...prev,
             stepCount: nextStep,
-            isAccepted: true,
+          };
+        });
+      } else {
+        if (changes.length === 0) {
+          const currentTapes = activeTapesRef.current;
+          const eoi = computeEOI(currentTapes);
+          const finalStates = execMgr.tapesAtFinalState();
+          let isAccepted = false;
+
+          for (const tape of currentTapes) {
+            if (eoi.has(tape.id) && finalStates.has(tape.id)) {
+              isAccepted = true;
+              break;
+            }
+          }
+
+          pause();
+          setExecutionStatus((prev) => ({
+            ...prev,
             isHalted: true,
             isExecuting: false,
-          };
+            isAccepted: isAccepted,
+            isRejected: !isAccepted,
+          }));
+          return;
         }
-        if (isRejected) {
-          pause();
+
+        const nextTapes = applyChanges(activeTapesRef.current, changes);
+        const eoi = computeEOI(nextTapes);
+        const finalStates = execMgr.tapesAtFinalState();
+        let isAccepted = false;
+
+        for (const id of eoi) {
+          if (finalStates.has(id)) {
+            isAccepted = true;
+            break;
+          }
+        }
+
+        const cellValues = nextTapes.map((t) => t.tapeValue[t.currentHeadPosition] ?? "");
+        execMgr.setNewTapeCellValues(cellValues);
+
+        setActiveTapes(nextTapes);
+        historyRef.current.addStates(nextTapes);
+        updateHistoryState();
+
+        setExecutionStatus((prev) => {
+          const nextStep = prev.stepCount + 1;
+          if (isAccepted) {
+            pause();
+            return {
+              ...prev,
+              stepCount: nextStep,
+              isAccepted: true,
+              isHalted: true,
+              isExecuting: false,
+            };
+          }
           return {
             ...prev,
             stepCount: nextStep,
-            isRejected: true,
-            isHalted: true,
-            isExecuting: false,
           };
-        }
-        return {
-          ...prev,
-          stepCount: nextStep,
-        };
-      });
-    } else {
-      // ── Generic / TM / PDA / LBA Evaluation ──────────────────
-      if (changes.length === 0) {
-        halt();
-        return;
+        });
       }
-
-      const nextTapes = applyChanges(activeTapesRef.current, changes);
-      const eoi = computeEOI(nextTapes);
-      const finalStates = execMgr.tapesAtFinalState();
-      let isAccepted = false;
-
-      for (const id of eoi) {
-        if (finalStates.has(id)) {
-          isAccepted = true;
-          break;
-        }
-      }
-
-      const cellValues = nextTapes.map((t) => t.tapeValue[t.currentHeadPosition] ?? "");
-      execMgr.setNewTapeCellValues(cellValues);
-
-      setActiveTapes(nextTapes);
-      historyRef.current.addStates(nextTapes);
-      updateHistoryState();
-
-      setExecutionStatus((prev) => {
-        const nextStep = prev.stepCount + 1;
-        if (isAccepted) {
-          pause();
-          return {
-            ...prev,
-            stepCount: nextStep,
-            isAccepted: true,
-            isHalted: true,
-            isExecuting: false,
-          };
-        }
-        return {
-          ...prev,
-          stepCount: nextStep,
-        };
-      });
+    } catch (err: any) {
+      pause();
+      setExecutionStatus((prev) => ({
+        ...prev,
+        isExecuting: false,
+        isHalted: true,
+        errorMessage: err?.message || "An unexpected execution error occurred.",
+      }));
     }
   }, [executionStatus.isHalted, halt, pause, updateHistoryState]);
 
@@ -223,58 +285,77 @@ export function useAutomataEngine(): EngineAPI {
     ) => {
       pause();
       animationDelayRef.current = animationDelay;
-      console.log(config)
-      const parsingManager = new ParsingManager(config.machineType);
-      const definition = parsingManager.parseCode(config, code);
+      
+      try {
+        const parsingManager = new ParsingManager(config.machineType);
+        const definition = parsingManager.parseCode(config, code);
 
-      setMachineDefinition(definition);
-      const execMgr = new ExecutionManager(config.machineType, input, definition);
-      executionManagerRef.current = execMgr;
+        if (!definition) {
+          throw new Error("Failed to parse machine code into a valid definition.");
+        }
 
-      historyRef.current.reset();
+        setMachineDefinition(definition);
+        const execMgr = new ExecutionManager(config.machineType, input, definition);
+        executionManagerRef.current = execMgr;
 
-      const initialTape: ActiveTape = {
-        tapeValue: input.split(""),
-        parentId: "thread-root",
-        currentHeadPosition: 0,
-        currentState: (definition as any)?.initial,
-        stack: null,
-        id: InstanceManager.assignId(),
-        index: 0,
-        blankSymbol: null,
-        status: "ACTIVE",
-      };
+        historyRef.current.reset();
 
-      if (config.machineType === "TM") {
-        const tmConfig = config as TMConfig;
-        const tmDef = definition as TMDefinition;
-        initialTape.blankSymbol = tmConfig.emptyTape;
-        initialTape.tapeValue = (
-          tmDef.blankSymbol.repeat(12) +
-          input +
-          tmDef.blankSymbol.repeat(12)
-        ).split("");
-        initialTape.currentHeadPosition = 8;
+        const initialTape: ActiveTape = {
+          tapeValue: input.split(""),
+          parentId: "thread-root",
+          currentHeadPosition: 0,
+          currentState: (definition as any)?.initial,
+          stack: null,
+          id: InstanceManager.assignId(),
+          index: 0,
+          blankSymbol: null,
+          status: "ACTIVE",
+          lastInstruction: "Initial",
+        };
 
-      } else if(config.machineType === 'LBA'){
-        const lbaDef = definition as LBADefinition;
-        initialTape.tapeValue = (lbaDef.beginningSymbol + input + lbaDef.endSymbol).split("")
+        if (config.machineType === "TM") {
+          const tmConfig = config as TMConfig;
+          const tmDef = definition as TMDefinition;
+          initialTape.blankSymbol = tmConfig.emptyTape;
+          initialTape.tapeValue = (
+            tmDef.blankSymbol.repeat(12) +
+            input +
+            tmDef.blankSymbol.repeat(12)
+          ).split("");
+          initialTape.currentHeadPosition = 8;
+        } else if (config.machineType === 'LBA') {
+          const lbaDef = definition as LBADefinition;
+          initialTape.tapeValue = (lbaDef.beginningSymbol + input + lbaDef.endSymbol).split("")
+        }
+
+        execMgr.setInitialTapeStates(initialTape);
+
+        const initialTapes = [initialTape];
+        setActiveTapes(initialTapes);
+        historyRef.current.addStates(initialTapes);
+        updateHistoryState();
+
+        setExecutionStatus({
+          isExecuting: false,
+          isHalted: false,
+          isAccepted: false,
+          isRejected: false,
+          stepCount: 0,
+          errorMessage: null,
+        });
+      } catch (err: any) {
+        pause();
+        setActiveTapes([]);
+        setMachineDefinition(null);
+        setExecutionStatus({
+          isExecuting: false,
+          isHalted: true,
+          isAccepted: false,
+          isRejected: false,
+          stepCount: 0,
+          errorMessage: err?.message || "Parsing or initialization error occurred.",
+        });
       }
-
-      execMgr.setInitialTapeStates(initialTape);
-
-      const initialTapes = [initialTape];
-      setActiveTapes(initialTapes);
-      historyRef.current.addStates(initialTapes);
-      updateHistoryState();
-
-      setExecutionStatus({
-        isExecuting: false,
-        isHalted: false,
-        isAccepted: false,
-        isRejected: false,
-        stepCount: 0,
-      });
     },
     [pause, updateHistoryState]
   );
@@ -292,6 +373,7 @@ export function useAutomataEngine(): EngineAPI {
       isAccepted: false,
       isRejected: false,
       stepCount: 0,
+      errorMessage: null,
     });
   }, [pause, updateHistoryState]);
 
@@ -313,7 +395,6 @@ export function useAutomataEngine(): EngineAPI {
     }
   }, [pause, updateHistoryState]);
 
-  // Clean up interval on unmount
   useEffect(() => {
     return () => {
       if (intervalRef.current !== null) {

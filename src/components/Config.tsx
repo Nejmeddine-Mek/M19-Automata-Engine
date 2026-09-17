@@ -71,7 +71,7 @@ export default function Config({ theme, language = "en", onChangeConfig }: Confi
       case 'TM':
         onChangeConfig({
           machineType: 'TM',
-          alphabet: parsedLetters,
+          alphabet: [...parsedLetters, ...parsedAuxAlphabet],
           right: rightSymbol.trim(),
           left: leftSymbol.trim(),
           emptyTape: blankSymbol.trim()
@@ -210,6 +210,19 @@ export default function Config({ theme, language = "en", onChangeConfig }: Confi
         case 'TM':
           return (
             <div className="flex flex-col gap-3 w-full">
+              {/* Auxiliary Alphabet */}
+              <div className="flex flex-col gap-1">
+                <label className={`text-[11px] font-medium ${theme.textTitle}`}>
+                  {isFr ? "Alphabet Auxiliaire" : "Auxiliary Alphabet"}
+                </label>
+                <input
+                  type="text"
+                  value={auxiliaryAlphabet}
+                  onChange={(e) => setAuxiliaryAlphabet(e.target.value)}
+                  placeholder="e.g. x, y"
+                  className={`px-2.5 py-1.5 ${theme.bgInput} ${theme.border} ${theme.textInput} border rounded-md text-xs font-mono outline-none ${theme.focusRing}`}
+                />
+              </div>
               {/* Top Row: Blank Symbol */}
               <div className="flex flex-col gap-1">
                 <label className={`text-[11px] font-medium ${theme.textTitle}`}>

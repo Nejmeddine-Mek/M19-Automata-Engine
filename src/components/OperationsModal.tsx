@@ -4,6 +4,7 @@ import type { ThemeType } from "../App";
 import FSAGraph from "./FSAGraph";
 import { mirrorFSA } from "../algorithms/mirror";
 import { determinizeFSA } from "../algorithms/NFAtoDFA";
+import { degeneralizeFSA } from "../algorithms/FSADegenralization";
 
 interface OperationsModalProps {
   isOpen: boolean;
@@ -78,7 +79,13 @@ export default function OperationsModal({
       onClose();
     }
   };
+  const handleDegeneralization = () => {
+    setActiveOperation("nfa2dfa");
+    setCurrentStepIndex(0);
+    const mockSteps: OperationStep[] = degeneralizeFSA(definition, language)
 
+    setOperationSteps(mockSteps)
+ }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
       {/* Expanded max-width for side-by-side view */}
@@ -122,6 +129,16 @@ export default function OperationsModal({
             }`}
           >
             {isFr ? "Déterminisation (NFA → DFA)" : "Determinization (NFA → DFA)"}
+          </button>
+                    <button
+            onClick={handleDegeneralization}
+            className={`px-3 py-1.5 text-xs font-mono font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
+              activeOperation === "nfa2dfa" 
+                ? "bg-indigo-600 text-white" 
+                : `border border-zinc-700 ${theme.textMuted} hover:bg-zinc-800`
+            }`}
+          >
+            {isFr ? "Dégénéralisation (Mots → Caractères)" : "Degeneralization (Words → Characters)"}
           </button>
         </div>
 

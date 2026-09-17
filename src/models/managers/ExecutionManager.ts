@@ -1,16 +1,12 @@
-
 import { Engine } from "../entities/Engine";
 import type { ActiveTape, TapeStepChange } from "../interfaces/activeTapeConfigs";
 import type { FsaDefinition } from "../interfaces/FsaDefinition";
-
 import type { LBADefinition } from "../interfaces/LBADefinition";
 import type { PDADefinition } from "../interfaces/PDADefinition";
 import type { TMDefinition } from "../interfaces/TMDefinition";
-
-
 import { InstanceManager } from "./executionSubClasses/InstanceManager";
 
-export class ExecutionManager{
+export class ExecutionManager {
     public instanceManager: InstanceManager
 
     public readonly initialTape: string;
@@ -19,7 +15,6 @@ export class ExecutionManager{
     private engine: Engine;
     private halted: boolean;
 
-    // for the PDA, we will need to keep the states of stacks, we do that later
     constructor(machineType: string, tape: string, definition: FsaDefinition | PDADefinition | LBADefinition | TMDefinition | null | undefined) {
         this.machineType = machineType;
         this.initialTape = tape;
@@ -27,8 +22,6 @@ export class ExecutionManager{
 
         this.engine = new Engine(machineType);
         this.halted = false;
-       // this.executionController = new ExecutionController()
-       // this.executionStateManager = new ExecutionStateManager()
         this.instanceManager = new InstanceManager()
     }
 
@@ -43,13 +36,13 @@ export class ExecutionManager{
         return [];
       }
 
-      // Build DTOs for each active tape
       return state.idsList.map((id, i) => ({
         id,
         nextHeadPosition: state.headNextPosition[i],
         currentTapeValue: state.tapesCurrentValue[i],
         parentId: state.parentInstancesIds[i],
-        currentState: state.activeStates[i]
+        currentState: state.activeStates[i],
+        lastInstruction: state.executedInstructions?.[i]
       }));
     }
 
@@ -63,7 +56,6 @@ export class ExecutionManager{
 
   public getCurrentExecutionState(){
       return this.engine.getEngineState()
-
   }
 
   public getDefinition() {

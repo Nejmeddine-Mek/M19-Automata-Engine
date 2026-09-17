@@ -16,73 +16,77 @@ export class FSAParser{
         this.epsilon = epsilon
     }   
 
-    // TODO: this is set to void for now, this should return the parsed object which the engine should be using when reading the tape
-    public parseInstructions(): FsaDefinition | null {
-
+    public parseInstructions(): FsaDefinition {
         const cleanedCode = CleaningService(this.Code)
-        if(cleanedCode.length === 0)
-                return null
-        if(cleanedCode.length < 2){
-            //TODO THROW AN ERROR INCOMPLETE CODE, NO INSTRUCTIONS
-            return null
+        if(cleanedCode.length === 0) {
+            throw new Error("FSA Parser Error: Code is empty or contains only comments/whitespace.");
         }
-        // the way this works should be as follows
+        if(cleanedCode.length < 2){
+            throw new Error("FSA Parser Error: Incomplete code. Must include both 'initial:' and 'final:' directives.");
+        }
+
         let initialState : string
         const finalStates : Set<string> = new Set<string>()
 
-        // INITIAL DIRECTIVE -------------------------
+        // 1. INITIAL DIRECTIVE -------------------------
         let lineTokens = cleanedCode[0].split(this.DIRECTIVES_SEPARATOR)
         
-        if(lineTokens[0].toLocaleLowerCase() !== "initial"){
-            // TODO: throw a compile time error, no initial state declared
+        if(lineTokens[0].trim().toLowerCase() !== "initial"){
+            throw new Error(`FSA Parser Error (Line 1): Expected 'initial:' directive, but found '${lineTokens[0]}'.`);
         }
 
-        if (!lineTokens[1]) {
-            // TODO: throw error - directive missing value/separator
-            return null
+        if (!lineTokens[1] || lineTokens[1].trim().length === 0) {
+            throw new Error("FSA Parser Error (Line 1): 'initial:' directive is missing the initial state name.");
         }
 
-        //WE CAN MAKE SURE IT IS A SINGLETON BY CHECKING FOR SEPARATORS
         if(containsForbiddenChar(lineTokens[1].trim())){
-            //TODO: throw an error, initial state contains forbidden chars
+            throw new Error(`FSA Parser Error (Line 1): Initial state '${lineTokens[1].trim()}' contains forbidden special characters.`);
         }
 
         initialState = lineTokens[1].trim()
 
-        // FINAL DIRECTIVE -------------------
+        // 2. FINAL DIRECTIVE -------------------
         lineTokens = cleanedCode[1].split(this.DIRECTIVES_SEPARATOR)
-        if(lineTokens[0].toLocaleLowerCase() !== "final"){
-            //TODO: throw a compile time error, no final states declared
-
+        if(lineTokens[0].trim().toLowerCase() !== "final"){
+            throw new Error(`FSA Parser Error (Line 2): Expected 'final:' directive, but found '${lineTokens[0]}'.`);
         } 
 
-        if (!lineTokens[1]) {
-            // TODO: throw error or allow empty final states depending on your DSL spec
-        } else {
+        if (lineTokens[1]) {
             lineTokens[1]
                 .split(this.COMMA)
                 .map(token => token.trim())
                 .filter(token => token.length > 0)
-                .forEach(token => finalStates.add(token));
+                .forEach(token => {
+                    if (containsForbiddenChar(token)) {
+                        throw new Error(`FSA Parser Error (Line 2): Final state '${token}' contains forbidden special characters.`);
+                    }
+                    finalStates.add(token);
+                });
+        }
+
+        if (finalStates.size === 0) {
+            console.warn("FSA Parser Warning: No final states declared in 'final:' directive.");
         }
     
-        // PROCESS INSTRUCTIONS ---------------
-        // NOW WE GO THROUGH WHAT'S LEFT, AND ADD INTO THE MASTER OBJECT AS FOLLOWS
+        // 3. PROCESS INSTRUCTIONS ---------------
         const instructions: Map<string, Map<string,string[]>> = new Map()
         let maxEntryLength = 1;
 
         for(let i = 2; i < cleanedCode.length; ++i){
             lineTokens = cleanedCode[i].split(this.COMMA).map(token => token.trim())
-            //FIRST, check if the tokens match the expected number 3
+            
             if(lineTokens.length !== 3){
-                //TODO: throw an error number of tokens mismatches the DSL structure
+                throw new Error(`FSA Parser Error (Line ${i + 1}): Instruction must have 3 comma-separated tokens [State, ReadSymbol, NextState]. Found ${lineTokens.length} tokens: "${cleanedCode[i]}".`);
             }
-            // NOW WE CAN CHECK IF THE FIRST STATE IN THE FIRST LINE IS INITIAL OR NOT, WE MAY ALSO SKIP IT
-            // PREDICTION WISE, THE MISS RATE WILL BE LOW BECAUSE THE IF EXECUTES ONLY ONCE
+
+            if(containsForbiddenChar(lineTokens[0]) || containsForbiddenChar(lineTokens[2])){
+                throw new Error(`FSA Parser Error (Line ${i + 1}): State names '${lineTokens[0]}' or '${lineTokens[2]}' contain forbidden special characters.`);
+            }
+
             if(i === 2 && lineTokens[0] !== initialState){
-                // TODO: THROW AN ERROR, FIRST STATE IS NOT INITIAL
+                throw new Error(`FSA Parser Error (Line ${i + 1}): First instruction state '${lineTokens[0]}' does not match declared initial state '${initialState}'.`);
             }
-            // we have now our token as follows: [state, read symbol, next state]
+
             let stateInnerMap: Map<string, string[]> | undefined = instructions.get(lineTokens[0])
             if(!stateInnerMap){
                 stateInnerMap = new Map()
@@ -91,8 +95,8 @@ export class FSAParser{
             const isValidSymbol = symbol === this.epsilon || symbol.split("").every(ch => this.Alphabet.has(ch));
 
             if (!isValidSymbol) {
-                // TODO: Symbol not in alphabet or valid epsilon
-                return null;
+                const alphabetStr = Array.from(this.Alphabet).join(", ");
+                throw new Error(`FSA Parser Error (Line ${i + 1}): Symbol '${symbol}' contains characters not in alphabet {${alphabetStr}} or valid epsilon symbol '${this.epsilon}'.`);
             }
 
             if (symbol !== this.epsilon) {
@@ -102,9 +106,8 @@ export class FSAParser{
             let nextStates: string[] = stateInnerMap.get(lineTokens[1]) || []
 
             nextStates.push(lineTokens[2])
-            stateInnerMap.set(lineTokens[1],nextStates)
-            instructions.set(lineTokens[0],stateInnerMap)
-
+            stateInnerMap.set(lineTokens[1], nextStates)
+            instructions.set(lineTokens[0], stateInnerMap)
         }
 
        return {
@@ -116,11 +119,7 @@ export class FSAParser{
        }
     }
 
-
-    // Helper method to check if a token contains any forbidden special character
-
     public getAlphabet(): Set<string> { return this.Alphabet }
     public getCode(): String{ return this.Code }
     public getEpsilon():String{ return this.epsilon }
-
 }
