@@ -71,7 +71,7 @@ export default function IDE({
           <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80"></span>
           <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
-          <span className="ml-2 font-mono text-slate-400">instructions.m19</span>
+          
         </div>
 
         {/* Save / Load Controls */}
@@ -93,7 +93,7 @@ export default function IDE({
           >
             📂 {isFr ? "Fichier" : "File"}
           </button>
-
+{/*
           <button
             type="button"
             onClick={handleLoadLocalStorage}
@@ -101,7 +101,7 @@ export default function IDE({
             className="px-2 py-0.5 text-[10px] font-mono font-semibold bg-indigo-600/80 hover:bg-indigo-500 text-white rounded cursor-pointer transition-all flex items-center gap-1"
           >
             ⚡ {isFr ? "Local" : "Local"}
-          </button>
+          </button> */}
 
           <input
             type="file"

@@ -6,10 +6,14 @@ import { mirrorFSA } from "../algorithms/mirror";
 import { determinizeFSA } from "../algorithms/NFAtoDFA";
 import { degeneralizeFSA } from "../algorithms/FSADegenralization";
 
+import type { FSAConfig, LBAConfig, PDAConfig, TMConfig } from "../models/interfaces/configs";
+import { complementFSA } from "../algorithms/complement.";
+
 interface OperationsModalProps {
   isOpen: boolean;
   onClose: () => void;
   definition: FsaDefinition | null;
+  machineConfig?: FSAConfig | PDAConfig | LBAConfig | TMConfig | null;
   theme: ThemeType;
   language?: "en" | "fr";
 }
@@ -24,6 +28,7 @@ export default function OperationsModal({
   isOpen,
   onClose,
   definition,
+  machineConfig,
   theme,
   language = "en",
 }: OperationsModalProps) {
@@ -80,9 +85,17 @@ export default function OperationsModal({
     }
   };
   const handleDegeneralization = () => {
-    setActiveOperation("nfa2dfa");
+    setActiveOperation("degeneralization");
     setCurrentStepIndex(0);
     const mockSteps: OperationStep[] = degeneralizeFSA(definition, language)
+
+    setOperationSteps(mockSteps)
+ }
+
+ const handleComplement = () => {
+    setActiveOperation("complement");
+    setCurrentStepIndex(0);
+    const mockSteps: OperationStep[] = complementFSA(definition, new Set((machineConfig as FSAConfig).alphabet), language)
 
     setOperationSteps(mockSteps)
  }
@@ -133,12 +146,22 @@ export default function OperationsModal({
                     <button
             onClick={handleDegeneralization}
             className={`px-3 py-1.5 text-xs font-mono font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
-              activeOperation === "nfa2dfa" 
+              activeOperation === "degeneralization" 
                 ? "bg-indigo-600 text-white" 
                 : `border border-zinc-700 ${theme.textMuted} hover:bg-zinc-800`
             }`}
           >
             {isFr ? "Dégénéralisation (Mots → Caractères)" : "Degeneralization (Words → Characters)"}
+          </button>
+          <button
+            onClick={handleComplement}
+            className={`px-3 py-1.5 text-xs font-mono font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
+              activeOperation === "complement" 
+                ? "bg-indigo-600 text-white" 
+                : `border border-zinc-700 ${theme.textMuted} hover:bg-zinc-800`
+            }`}
+          >
+            {isFr ? "Complément (États Inversés)" : "Complement (Inverted States)"}
           </button>
         </div>
 

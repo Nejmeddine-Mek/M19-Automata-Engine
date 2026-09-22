@@ -1,8 +1,15 @@
 import type { FsaDefinition } from "../models/interfaces/FsaDefinition";
 import type { OperationStep } from "../components/OperationsModal";
 import { codeFromDefinition } from "./codeFromDefinition";
+import { degeneralizeFSA } from "./FSADegenralization";
 
 export function determinizeFSA(definition: FsaDefinition, language: 'fr' | 'en' = 'en'): OperationStep[] {
+    if(definition.maxEntryLength! > 1){
+        const degenSteps = degeneralizeFSA(definition, language)
+        definition = degenSteps[degenSteps.length - 1].def
+
+    }
+    
     const isFr = language === 'fr';
     const steps: OperationStep[] = [];
     

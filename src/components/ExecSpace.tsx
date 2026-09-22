@@ -11,6 +11,8 @@ import type { TMDefinition } from '../models/interfaces/TMDefinition';
 import OperationsModal from './OperationsModal';
 import LBAGraph from './LBAGraph';
 
+import type { FSAConfig, LBAConfig, PDAConfig, TMConfig } from '../models/interfaces/configs';
+
 export interface ThemeConfig {
   bgApp: string;
   bgPanel: string;
@@ -33,6 +35,7 @@ interface ExecSpaceProps {
   activeTapes: ActiveTape[];
   executionStatus: ExecutionStatus;
   machineDefinition?: FsaDefinition | PDADefinition | LBADefinition | TMDefinition | null;
+  machineConfig?: FSAConfig | PDAConfig | LBAConfig | TMConfig | null;
   canStepBack: boolean;
   canStepForward: boolean;
   onExecute: (inputTape: string, animationDelay: number) => void;
@@ -50,6 +53,7 @@ export function ExecSpace({
   activeTapes,
   executionStatus,
   machineDefinition,
+  machineConfig,
   canStepBack,
   canStepForward,
   onExecute,
@@ -318,7 +322,7 @@ export function ExecSpace({
         )}
       </div>
       {ShowOperationsModal && (
-        <OperationsModal isOpen={ShowOperationsModal} onClose={() => setShowOperationsModal(false)} definition={machineDefinition as FsaDefinition} theme={theme} language={language}/>
+        <OperationsModal isOpen={ShowOperationsModal} onClose={() => setShowOperationsModal(false)} definition={machineDefinition as FsaDefinition} machineConfig={machineConfig} theme={theme} language={language}/>
       )}
     </div>
   );

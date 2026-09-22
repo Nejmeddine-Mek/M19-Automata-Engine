@@ -6,6 +6,7 @@ export interface AppSettings {
   fontFamily: "mono" | "sans" | "serif";
   fontSize: "small" | "medium" | "large";
   fontWeight: "normal" | "medium" | "bold";
+  apiKey?: string;
 }
 
 interface SettingsModalProps {
@@ -41,6 +42,7 @@ export default function SettingsModal({
       fontFamily: "mono",
       fontSize: "medium",
       fontWeight: "normal",
+      apiKey: "",
     });
   };
 
@@ -137,7 +139,21 @@ export default function SettingsModal({
             </div>
           </div>
 
-          {/* 3. Typography & Font Settings */}
+          {/* 3. API Key Parameter */}
+          <div className="space-y-2 pt-2 border-t border-zinc-800/40">
+            <label className={`text-xs font-bold uppercase tracking-wider ${theme.textTitle} flex items-center gap-2`}>
+              🔑 {isFr ? "Clé API Chatbot" : "Chatbot API Key"}
+            </label>
+            <input
+              type="password"
+              value={settings.apiKey || ""}
+              onChange={(e) => handleChange("apiKey", e.target.value)}
+              placeholder={isFr ? "Entrez votre clé API..." : "Enter your API Key..."}
+              className={`w-full px-3 py-2 text-xs font-mono rounded-xl border ${theme.bgInput} ${theme.borderSubtle} ${theme.textInput} outline-none ${theme.focusRing}`}
+            />
+          </div>
+
+          {/* 4. Typography & Font Settings */}
           <div className="space-y-4 pt-2 border-t border-zinc-800/40">
             <label className={`text-xs font-bold uppercase tracking-wider ${theme.textTitle} flex items-center gap-2`}>
               🔤 {isFr ? "Police & Typographie" : "Font & Typography"}
@@ -247,4 +263,3 @@ export default function SettingsModal({
     </div>
   );
 }
-

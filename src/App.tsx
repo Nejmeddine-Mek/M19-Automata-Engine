@@ -4,6 +4,7 @@ import Header from "./components/Header";
 import ExecSpace from "./components/ExecSpace";
 import IDE from "./components/IDE";
 import SettingsModal, { type AppSettings } from "./components/SettingsModal";
+import Chatbot from "./components/Chatbot";
 import type { FSAConfig, LBAConfig, PDAConfig, TMConfig } from "./models/interfaces/configs";
 import { useAutomataEngine } from "./hooks/useAutomataEngine";
 
@@ -50,6 +51,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   fontFamily: "mono",
   fontSize: "medium",
   fontWeight: "normal",
+  apiKey: "",
 };
 
 export default function App() {
@@ -156,7 +158,7 @@ export default function App() {
   return (
     <div
       style={getFontStyle()}
-      className={`flex flex-col h-screen w-screen overflow-hidden ${activeTheme.bgApp} ${activeTheme.textInput} transition-colors duration-200`}
+      className={`flex flex-col h-screen w-screen overflow-hidden ${activeTheme.bgApp} ${activeTheme.textInput} transition-colors duration-200 relative`}
     >
       <Header
         theme={activeTheme}
@@ -175,6 +177,7 @@ export default function App() {
               activeTapes={engine.activeTapes}
               executionStatus={engine.executionStatus}
               machineDefinition={engine.machineDefinition}
+              machineConfig={machineConfig}
               canStepBack={engine.canStepBack}
               canStepForward={engine.canStepForward}
               onExecute={handleExecute}
@@ -273,6 +276,14 @@ export default function App() {
         settings={settings}
         onUpdateSettings={handleUpdateSettings}
         theme={activeTheme}
+      />
+
+      <Chatbot
+        theme={activeTheme}
+        language={settings.language}
+        apiKey={settings.apiKey}
+        machineConfig={machineConfig}
+        code={code}
       />
     </div>
   );
