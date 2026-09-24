@@ -158,7 +158,15 @@ export default function App() {
   return (
     <div
       style={getFontStyle()}
-      className={`flex flex-col h-screen w-screen overflow-hidden ${activeTheme.bgApp} ${activeTheme.textInput} transition-colors duration-200 relative`}
+      className={`flex flex-col h-screen w-screen overflow-hidden
+        ${activeTheme.bgApp} ${activeTheme.textInput}
+        transition-colors duration-200 relative
+        [&::-webkit-scrollbar]:w-2
+        [&::-webkit-scrollbar-track]:bg-transparent
+        [&::-webkit-scrollbar-thumb]:bg-gray-600
+        [&::-webkit-scrollbar-thumb]:rounded-full
+        [&::-webkit-scrollbar-thumb:hover]:bg-gray-500
+      `}
     >
       <Header
         theme={activeTheme}

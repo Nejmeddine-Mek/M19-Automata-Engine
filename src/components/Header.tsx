@@ -1,4 +1,7 @@
+import { useState } from "react";
 import type { ThemeType } from "../App";
+import AlgorithmsModal from "./AlgorithmsModal";
+import DocsModal from "./DocsModal";
 
 interface HeaderProps {
   theme: ThemeType;
@@ -8,7 +11,8 @@ interface HeaderProps {
 
 export default function Header({ theme, onOpenSettings, language = "en" }: HeaderProps) {
   const isFr = language === "fr";
-
+  const [isAlgorithmsModalOpen, setIsAlgorithmsModalOpen] = useState(false)
+  const [isDocsModalOpen, setIsDocsModalOpen] = useState(false)
   return (
     <header className={`w-full h-[80px] ${theme.bgSidebar} ${theme.border} border-b px-6 flex items-center justify-between shadow-sm shrink-0`}>
       {/* ── Left Side: Logo & Title ──────────────────────────────────── */}
@@ -24,22 +28,19 @@ export default function Header({ theme, onOpenSettings, language = "en" }: Heade
 
       {/* ── Right Side: Docs & Settings Buttons ──────────────────────── */}
       <div className="flex items-center space-x-3">
+        {/* ── Algorithms Library Button ────────────────────────────────────── */}
         <button
-          type="button"
-          className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold ${theme.fontMono} uppercase tracking-wider 
-            ${theme.bgPanelInner} ${theme.textTitle} hover:${theme.textInput} 
-            border ${theme.borderSubtle} rounded-lg transition-all shadow-sm 
-            hover:border-sky-500/50 ${theme.focusRing}`}
+          onClick={() => setIsAlgorithmsModalOpen(true)}
+          className={`px-3 py-1.5 text-xs font-mono font-semibold rounded-xl border ${theme.border} ${theme.bgPanelInner} ${theme.textInput} hover:bg-indigo-600 hover:text-white hover:border-indigo-500 transition-all cursor-pointer flex items-center gap-1.5 shadow-sm`}
+          title={isFr ? "Bibliothèque d'Algorithmes" : "Algorithms Library"}
         >
-          {/* Book / Docs Icon */}
-          <svg className="w-4 h-4 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 8a1 1 0 011-1h8a1 1 0 011 1v10a1 1 0 01-1 1H8a1 1 0 01-1-1V8zM12 4v3M9 11h2M14 11h2M10 16h4" />
-          </svg>
-          ChatBot
+          <span>📖</span>
+          <span>{isFr ? "Algorithmes" : "Algorithms"}</span>
         </button>
         {/* Documentation Button */}
         <button
           type="button"
+          onClick={() => setIsDocsModalOpen(true)}
           className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold ${theme.fontMono} uppercase tracking-wider 
             ${theme.bgPanelInner} ${theme.textTitle} hover:${theme.textInput} 
             border ${theme.borderSubtle} rounded-lg transition-all shadow-sm 
@@ -69,6 +70,8 @@ export default function Header({ theme, onOpenSettings, language = "en" }: Heade
           {isFr ? "Paramètres" : "Settings"}
         </button>
       </div>
+      <DocsModal theme={theme} language={language} onClose={() => setIsDocsModalOpen(false)} isOpen={isDocsModalOpen} />
+      <AlgorithmsModal theme={theme} onClose={() => setIsAlgorithmsModalOpen(false) } language={language} isOpen={isAlgorithmsModalOpen}/>
     </header>
   );
 }

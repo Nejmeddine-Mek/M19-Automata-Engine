@@ -8,6 +8,7 @@ import { degeneralizeFSA } from "../algorithms/FSADegenralization";
 
 import type { FSAConfig, LBAConfig, PDAConfig, TMConfig } from "../models/interfaces/configs";
 import { complementFSA } from "../algorithms/complement.";
+import { trimFSA } from "../algorithms/trim";
 
 interface OperationsModalProps {
   isOpen: boolean;
@@ -99,6 +100,13 @@ export default function OperationsModal({
 
     setOperationSteps(mockSteps)
  }
+  const handleTrimFsa = () => {
+    setActiveOperation("trim")
+    setCurrentStepIndex(0)
+    const mockSteps: OperationStep[] = trimFSA(definition, language)
+
+    setOperationSteps(mockSteps)
+  }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
       {/* Expanded max-width for side-by-side view */}
@@ -162,6 +170,16 @@ export default function OperationsModal({
             }`}
           >
             {isFr ? "Complément (États Inversés)" : "Complement (Inverted States)"}
+          </button>
+          <button
+            onClick={handleTrimFsa}
+            className={`px-3 py-1.5 text-xs font-mono font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
+              activeOperation === "trim" 
+                ? "bg-indigo-600 text-white" 
+                : `border border-zinc-700 ${theme.textMuted} hover:bg-zinc-800`
+            }`}
+          >
+            {isFr ? "Élagage (Inaccessibles & Puits)" : "Trimming (Unreachable & Dead)"}
           </button>
         </div>
 
