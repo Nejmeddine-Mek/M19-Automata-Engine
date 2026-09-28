@@ -278,7 +278,7 @@ export function useAutomataEngine(): EngineAPI {
 
   const execute = useCallback(
     (
-      config: FSAConfig | PDAConfig | LBAConfig | TMConfig,
+      config: FSAConfig | PDAConfig | LBAConfig | TMConfig | null,
       code: string,
       input: string,
       animationDelay: number
@@ -287,6 +287,13 @@ export function useAutomataEngine(): EngineAPI {
       animationDelayRef.current = animationDelay;
       
       try {
+        if (!config) {
+          throw new Error("No machine config provided. Please configure the machine first.");
+        }
+        if (code.trim().length === 0) {
+          throw new Error("No code to parse. Please write some code before executing.");
+        }
+
         const parsingManager = new ParsingManager(config.machineType);
         const definition = parsingManager.parseCode(config, code);
 

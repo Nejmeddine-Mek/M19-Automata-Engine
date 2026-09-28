@@ -108,11 +108,7 @@ export default function App() {
   const engine = useAutomataEngine();
 
   const handleExecute = (inputTape: string, animationDelay: number) => {
-    if (!machineConfig || code.length === 0) {
-      console.error("No machine config or code to parse");
-      return;
-    }
-    engine.execute(machineConfig, code, inputTape, animationDelay);
+    engine.execute(machineConfig!, code, inputTape, animationDelay);
   };
 
   const activeInstructions = engine.activeTapes

@@ -21,7 +21,7 @@ export class FSAParser{
         if(cleanedCode.length === 0) {
             throw new Error("FSA Parser Error: Code is empty or contains only comments/whitespace.");
         }
-        if(cleanedCode.length < 2){
+        if(cleanedCode.length <= 2){
             throw new Error("FSA Parser Error: Incomplete code. Must include both 'initial:' and 'final:' directives.");
         }
 
