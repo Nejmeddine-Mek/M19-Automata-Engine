@@ -9,6 +9,10 @@ import { degeneralizeFSA } from "../algorithms/FSADegenralization";
 import type { FSAConfig, LBAConfig, PDAConfig, TMConfig } from "../models/interfaces/configs";
 import { complementFSA } from "../algorithms/complement.";
 import { trimFSA } from "../algorithms/trim";
+import { fsaToRegex } from "../algorithms/DfaToRegex";
+import { fsaToGrammar } from "../algorithms/dfaToGrammar";
+import { regexToFsa } from "../algorithms/regexToFsa";
+import { grammarToFsa } from "../algorithms/grammarToFsa";
 
 interface OperationsModalProps {
   isOpen: boolean;
@@ -107,6 +111,54 @@ export default function OperationsModal({
 
     setOperationSteps(mockSteps)
   }
+
+  const handleFsaToRegex = () => {
+    setActiveOperation("dfaToRegex")
+    setCurrentStepIndex(0)
+    const mockSteps = fsaToRegex(definition, (machineConfig as FSAConfig).alphabet, language)
+
+    setOperationSteps(mockSteps)
+  }
+  const handleFsaToGrammar = () => {
+    setActiveOperation("grammar")
+    setCurrentStepIndex(0)
+    const mockSteps = fsaToGrammar(definition, language)
+
+    setOperationSteps(mockSteps)
+  }
+  const handleRunRegexToFsa = () => {
+    const userInput = window.prompt(
+        isFr 
+            ? "Entrez l'expression régulière (utilisez 'E' pour tout l'alphabet) :" 
+            : "Enter the regular expression (use 'E' for all alphabet):",
+        "a|E*" // default example
+    );
+
+    // If the user typed something and didn't hit cancel
+    if (userInput && userInput.trim() !== "") {
+        setActiveOperation("regexToFsa");
+        setCurrentStepIndex(0);
+        // Pass the string to our algorithm!
+        const steps = regexToFsa(userInput.replace(/\s+/g, ''), language); 
+        setOperationSteps(steps);
+    }
+  };
+  const handleRunGrammarToFsa = () => {
+    const userInput = window.prompt(
+        isFr 
+            ? "Entrez la grammaire régulière (ex: S -> aA | b, A -> aS | e) :" 
+            : "Enter regular grammar (e.g., S -> aA | b, A -> aS | e):",
+        "S -> aA | b, A -> aS | e"
+    );
+
+    if (userInput && userInput.trim() !== "") {
+        setActiveOperation("grammarToFsa");
+        setCurrentStepIndex(0);
+        // Clean spaces around arrows and pipes for safety, though the algorithm handles trims
+        const steps = grammarToFsa(userInput, language); 
+        setOperationSteps(steps);
+    }
+  };
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
       {/* Expanded max-width for side-by-side view */}
@@ -180,6 +232,46 @@ export default function OperationsModal({
             }`}
           >
             {isFr ? "Élagage (Inaccessibles & Puits)" : "Trimming (Unreachable & Dead)"}
+          </button>
+          <button
+            onClick={handleFsaToRegex}
+            className={`px-3 py-1.5 text-xs font-mono font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
+              activeOperation === "dfaToRegex" 
+                ? "bg-indigo-600 text-white" 
+                : `border border-zinc-700 ${theme.textMuted} hover:bg-zinc-800`
+            }`}
+          >
+            {isFr ? "FSA vers Regex (Élimination)" : "FSA to Regex (State Elimination)"}
+          </button>
+          <button
+            onClick={handleFsaToGrammar}
+            className={`px-3 py-1.5 text-xs font-mono font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
+              activeOperation === "grammar" 
+                ? "bg-indigo-600 text-white" 
+                : `border border-zinc-700 ${theme.textMuted} hover:bg-zinc-800`
+            }`}
+          >
+            {isFr ? "DFA vers Grammaire" : "DFA to Grammar"}
+          </button>
+          <button
+            onClick={handleRunRegexToFsa}
+            className={`px-3 py-1.5 text-xs font-mono font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
+              activeOperation === "regexToFsa" 
+                ? "bg-indigo-600 text-white" 
+                : `border border-zinc-700 ${theme.textMuted} hover:bg-zinc-800`
+            }`}
+          >
+            {isFr ? "Regex vers FSA" : "Regex to FSA"}
+          </button>
+          <button
+            onClick={handleRunGrammarToFsa}
+            className={`px-3 py-1.5 text-xs font-mono font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
+              activeOperation === "grammarToFsa" 
+                ? "bg-indigo-600 text-white" 
+                : `border border-zinc-700 ${theme.textMuted} hover:bg-zinc-800`
+            }`}
+          >
+            {isFr ? "Grammaire vers FSA" : "Grammar to FSA"}
           </button>
         </div>
 

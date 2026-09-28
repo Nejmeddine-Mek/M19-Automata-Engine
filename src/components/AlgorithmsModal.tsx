@@ -8,7 +8,16 @@ interface AlgorithmsModalProps {
   language?: "en" | "fr";
 }
 
-type AlgorithmKey = "trim" | "nfaToDfa" | "complement" | "mirror" | "degeneralization";
+type AlgorithmKey = 
+  | "trim" 
+  | "nfaToDfa" 
+  | "complement" 
+  | "mirror" 
+  | "degeneralization"
+  | "fsaToRegex"
+  | "fsaToGrammar"
+  | "regexToFsa"
+  | "grammarToFsa";
 
 interface AlgorithmDoc {
   id: AlgorithmKey;
@@ -217,19 +226,113 @@ OUTPUT: Standard FSA M' = (Q', Σ, δ', q0, F)
 4.     IF Length(word) <= 1 THEN
 5.         δ'(q_from, word) ← δ'(q_from, word) ∪ { q_to }
 6.     ELSE
-7.         // Break multi-character word "c1 c2 ... cn"
-8.         q_current ← q_from
-9.         FOR i = 1 TO Length(word) - 1 DO
-10.            q_next ← NewState("mid_" + unique_id)
-11.            Q' ← Q' ∪ { q_next }
-12.            δ'(q_current, word[i]) ← { q_next }
-13.            q_current ← q_next
-14.        END FOR
-15.        δ'(q_current, word[Length(word)]) ← { q_to }
-16.    END IF
-17. END FOREACH
+7.         q_current ← q_from
+8.         FOR i = 1 TO Length(word) - 1 DO
+9.             q_next ← NewState("mid_" + unique_id)
+10.            Q' ← Q' ∪ { q_next }
+11.            δ'(q_current, word[i]) ← { q_next }
+12.            q_current ← q_next
+13.        END FOR
+14.        δ'(q_current, word[Length(word)]) ← { q_to }
+15.    END IF
+16. END FOREACH
 
-18. RETURN M' = (Q', Σ, δ', q0, F)`
+17. RETURN M' = (Q', Σ, δ', q0, F)`
+  },
+  {
+    id: "fsaToRegex",
+    titleEn: "FSA to Regex (State Elimination)",
+    titleFr: "FSA vers Regex (Élimination d'États)",
+    complexity: "O(|Q|^3)",
+    inputEn: "FSA M = (Q, Σ, δ, q0, F)",
+    inputFr: "Automate M = (Q, Σ, δ, q0, F)",
+    outputEn: "Regular Expression r where L(r) = L(M)",
+    outputFr: "Expression Régulière r telle que L(r) = L(M)",
+    descriptionEn: "Converts an automaton to a regular expression by systematically eliminating intermediate states. Full alphabet transitions are simplified using 'E'.",
+    descriptionFr: "Convertit un automate en expression régulière en éliminant systématiquement les états intermédiaires.",
+    pseudocode: `ALGORITHM: StateElimination
+INPUT:  FSA M = (Q, Σ, δ, q0, F)
+OUTPUT: Regular Expression r
+
+1. Add Q_start and Q_end with ε-transitions to q0 and from F
+2. FOREACH state q ∈ Q \\ {Q_start, Q_end} DO
+3.     FOREACH predecessor p of q AND successor r of q DO
+4.         R_new ← R_existing ∪ (R_in · (R_loop)* · R_out)
+5.         Regex(p → r) ← R_new
+6.     END FOREACH
+7.     Remove state q
+8. END FOREACH
+9. RETURN Regex(Q_start → Q_end)`
+  },
+  {
+    id: "fsaToGrammar",
+    titleEn: "DFA to Regular Grammar",
+    titleFr: "AFD vers Grammaire Régulière",
+    complexity: "O(|Q| · |Σ|)",
+    inputEn: "Deterministic Finite Automaton M = (Q, Σ, δ, q0, F)",
+    inputFr: "Automate Fini Déterministe M = (Q, Σ, δ, q0, F)",
+    outputEn: "Right-Linear Grammar G = (V_N, V_T, P, S)",
+    outputFr: "Grammaire linéaire à droite G = (V_N, V_T, P, S)",
+    descriptionEn: "Converts a DFA into an equivalent right-linear regular grammar where states map to non-terminals and final states generate ε.",
+    descriptionFr: "Convertit un AFD en grammaire régulière équivalente où les états correspondent aux non-terminaux.",
+    pseudocode: `ALGORITHM: DfaToGrammar
+INPUT:  DFA M = (Q, Σ, δ, q0, F)
+OUTPUT: Regular Grammar G = (V_N, V_T, P, S)
+
+1. V_N ← Q, V_T ← Σ, S ← q0
+2. FOREACH state q ∈ Q, symbol a ∈ Σ DO
+3.     IF δ(q, a) = p THEN P ← P ∪ { q → a·p }
+4. END FOREACH
+5. FOREACH state f ∈ F DO P ← P ∪ { f → ε }
+6. RETURN G = (V_N, V_T, P, S)`
+  },
+  {
+    id: "regexToFsa",
+    titleEn: "Regex to NFA (Thompson's)",
+    titleFr: "Regex vers AFN (Thompson)",
+    complexity: "O(n)",
+    inputEn: "Regular Expression r over alphabet Σ",
+    inputFr: "Expression Régulière r sur l'alphabet Σ",
+    outputEn: "NFA with ε-transitions M = (Q, Σ, δ, q0, F)",
+    outputFr: "AFN avec transitions ε M = (Q, Σ, δ, q0, F)",
+    descriptionEn: "Converts a regex into an NFA using Thompson's construction rules for base symbols, concatenation, union, and Kleene star.",
+    descriptionFr: "Convertit une regex en AFN par les règles de construction de Thompson.",
+    pseudocode: `ALGORITHM: ThompsonConstruction
+INPUT:  Regular Expression r (postfix)
+OUTPUT: NFA M = (Q, Σ, δ, q0, F)
+
+1. Stack ← EmptyStack()
+2. FOREACH token t in r DO
+3.     IF t is symbol/E THEN Push Fragment
+4.     ELSE IF t is CONCAT (·) THEN Merge fragments with ε
+5.     ELSE IF t is UNION (|) THEN Fork via ε-transitions
+6.     ELSE IF t is KLEENE STAR (*) THEN Add loops via ε
+7. END FOREACH
+8. RETURN Stack.pop()`
+  },
+  {
+    id: "grammarToFsa",
+    titleEn: "Regular Grammar to NFA",
+    titleFr: "Grammaire Régulière vers AFN",
+    complexity: "O(|P|)",
+    inputEn: "Right-Linear Grammar G = (V_N, V_T, P, S)",
+    inputFr: "Grammaire linéaire à droite G = (V_N, V_T, P, S)",
+    outputEn: "Non-Deterministic Finite Automaton M = (Q, Σ, δ, q0, F)",
+    outputFr: "Automate Fini Non-Déterministe M = (Q, Σ, δ, q0, F)",
+    descriptionEn: "Converts a right-linear grammar to an NFA by mapping non-terminals to states and rules to transitions.",
+    descriptionFr: "Convertit une grammaire linéaire à droite en AFN.",
+    pseudocode: `ALGORITHM: GrammarToNfa
+INPUT:  Right-Linear Grammar G = (V_N, V_T, P, S)
+OUTPUT: NFA M = (Q, Σ, δ, q0, F)
+
+1. Q_f ← NewState("Final_Global")
+2. Q ← V_N ∪ { Q_f }, q0 ← S, F ← { Q_f }
+3. FOREACH rule in P DO
+4.     IF A → aB THEN δ(A, a) ← δ(A, a) ∪ { B }
+5.     ELSE IF A → a THEN δ(A, a) ← δ(A, a) ∪ { Q_f }
+6.     ELSE IF A → ε THEN F ← F ∪ { A }
+7. END FOREACH
+8. RETURN M = (Q, Σ, δ, q0, F)`
   }
 ];
 
@@ -251,7 +354,7 @@ export default function AlgorithmsModal({
       <div
         className={`relative w-full max-w-4xl max-h-[85vh] ${theme.bgSidebar} border ${theme.border} rounded-2xl shadow-2xl flex flex-col overflow-hidden`}
       >
-        {/* ── Modal Header ────────────────────────────────────────────── */}
+        {/* Header */}
         <div className={`flex items-center justify-between px-6 py-4 border-b ${theme.borderSubtle} ${theme.bgPanelInner}`}>
           <div className="flex items-center gap-2.5">
             <span className="text-xl">📖</span>
@@ -272,7 +375,7 @@ export default function AlgorithmsModal({
           </button>
         </div>
 
-        {/* ── Tabs Stripe ─────────────────────────────────────────────── */}
+        {/* Tabs Stripe */}
         <div className={`flex items-center gap-1.5 px-6 py-2.5 border-b ${theme.borderSubtle} overflow-x-auto scrollbar-none`}>
           {ALGORITHMS_DATA.map((algo) => (
             <button
@@ -289,9 +392,8 @@ export default function AlgorithmsModal({
           ))}
         </div>
 
-        {/* ── Content Body ────────────────────────────────────────────── */}
+        {/* Content Body */}
         <div className="flex-1 p-6 overflow-y-auto space-y-5 font-mono text-xs">
-          {/* Metadata Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className={`p-3 rounded-xl border ${theme.borderSubtle} ${theme.bgPanelInner}`}>
               <span className={`text-[10px] uppercase tracking-wider font-bold block mb-1 ${theme.textMuted}`}>
@@ -313,13 +415,11 @@ export default function AlgorithmsModal({
             </div>
           </div>
 
-          {/* Objective Description */}
           <div className={`p-3.5 rounded-xl border border-indigo-500/20 bg-indigo-950/20 ${theme.textInput}`}>
             <span className="font-bold text-indigo-400 mr-2">📌 Objective:</span>
             {isFr ? currentAlgo.descriptionFr : currentAlgo.descriptionEn}
           </div>
 
-          {/* Pseudocode Block */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className={`text-xs font-bold uppercase tracking-wider ${theme.textMuted}`}>
@@ -332,7 +432,7 @@ export default function AlgorithmsModal({
           </div>
         </div>
 
-        {/* ── Modal Footer ────────────────────────────────────────────── */}
+        {/* Footer */}
         <div className={`flex items-center justify-end px-6 py-3 border-t ${theme.borderSubtle} ${theme.bgPanelInner}`}>
           <button
             onClick={onClose}

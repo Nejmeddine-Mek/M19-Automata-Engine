@@ -54,15 +54,6 @@ export default function IDE({
     e.target.value = "";
   };
 
-  const handleLoadLocalStorage = () => {
-    const saved = localStorage.getItem("m19_saved_automaton");
-    if (saved && onLoad) {
-      onLoad(saved);
-    } else {
-      alert(isFr ? "Aucun automate sauvegardé dans le stockage local." : "No saved automaton found in local storage.");
-    }
-  };
-
   return (
     <div className="flex flex-col h-full w-full">
       {/* Editor Header Bar */}

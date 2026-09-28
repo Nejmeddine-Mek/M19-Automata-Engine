@@ -1,11 +1,13 @@
-export const LBA_NOTES = `[ESI Formalism Notes - Linear Bounded Automaton (LBA)]
-- Definition: M = (Q, Σ, Γ, δ, q0, <, >, F)
-- Boundary Markers: Beginning symbol '<' (startSymbol) and End symbol '>' (endSymbol) demarcate bounded memory.
+export const LBA_NOTES = `[ESI Formalism Notes - Linear Bounded Automata (LBA)]
+- Definition: Restricted Turing Machine where tape is bounded by the input size.
 - Directives:
-  * initial: <state>
-  * final: <state1, state2, ...>
-- Instruction Format: <CurrentState>, <ReadSymbol>, <ActionOrDirection>, <NextState>
-- Auxiliary Alphabet: Extra computation symbols allowed on tape.
-- Constraints: Moving left past '<' or overwriting boundary markers '<' and '>' is forbidden.
-- Bounded Memory: Computations must stay strictly within the memory bounded between '<' and '>'.`;
-
+  * initial: <state> (Must be declared on Line 1)
+  * final: <state1, state2, ...> (Declared on Line 2, comma-separated)
+- Instruction Format: <CurrentState>, <ReadSymbol>, <Action>, <NextState>
+  * <Action> can be either writing a new symbol OR a movement direction (L for Left, R for Right).
+  * Note: The order of the transition lines does not matter.
+- Tape & Boundary Rules:
+  * The tape is strictly bounded.
+  * The read head starts by default at the left marker 'C'.
+  * The right end marker is '$'.
+  * CRITICAL: When the machine reaches the right end marker '$', it MUST execute a move to the right ('R') to successfully finish reading all the tape and validate the input.`;
