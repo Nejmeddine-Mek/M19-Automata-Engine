@@ -1,0 +1,12 @@
+{
+  "version": "1.0",
+  "name": "FSA: Even number of 'a's",
+  "description": "Accepts strings containing an even number of 'a's",
+  "machineConfig": {
+    "machineType": "FSA",
+    "alphabet": ["a", "b"],
+    "epsilon": "e"
+  },
+  "code": "initial: q_even\nfinal: q_even\nq_even, a, q_odd\nq_even, b, q_even\nq_odd, a, q_even\nq_odd, b, q_odd"
+}
+

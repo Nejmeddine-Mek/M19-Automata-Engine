@@ -5,6 +5,8 @@ import ExecSpace from "./components/ExecSpace";
 import IDE from "./components/IDE";
 import SettingsModal, { type AppSettings } from "./components/SettingsModal";
 import Chatbot from "./components/Chatbot";
+import OnboardingModal, { shouldShowOnboarding } from "./components/OnboardingModal";
+import { PRELOADED_PROGRAMS } from "./utils/programLoader";
 import type { FSAConfig, LBAConfig, PDAConfig, TMConfig } from "./models/interfaces/configs";
 import { useAutomataEngine } from "./hooks/useAutomataEngine";
 
@@ -32,22 +34,22 @@ export const LIGHT_THEME = {
   bgPanel: "bg-white",
   border: "border-slate-300",
   borderSubtle: "border-slate-200",
-  textTitle: "text-slate-600",
-  textInput: "text-slate-900",
+  textTitle: "text-slate-700",
+  textInput: "text-slate-950",
   textMuted: "text-slate-500",
   focusRing: "focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500",
   fontSans: "font-sans",
   fontMono: "font-mono",
 };
 
-export const THEME = DARK_THEME;
+export const THEME = LIGHT_THEME;
 export type ThemeType = typeof DARK_THEME;
 
 const SETTINGS_KEY = "m19_automata_settings";
 
 const DEFAULT_SETTINGS: AppSettings = {
   language: "en",
-  themeMode: "dark",
+  themeMode: "light",
   fontFamily: "mono",
   fontSize: "medium",
   fontWeight: "normal",
@@ -59,8 +61,10 @@ export default function App() {
   const [showConfigWindow, SetShowConfigWindow] = useState(true);
   const [showIde, setShowIde] = useState(true);
   const [machineConfig, setMachineConfig] = useState<FSAConfig | PDAConfig | LBAConfig | TMConfig | null>(null);
+  const [selectedProgramId, setSelectedProgramId] = useState<string>("");
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(() => shouldShowOnboarding());
   const [settings, setSettings] = useState<AppSettings>(() => {
     try {
       const saved = localStorage.getItem(SETTINGS_KEY);
@@ -71,10 +75,28 @@ export default function App() {
     return DEFAULT_SETTINGS;
   });
 
+  // Sync dark class on html document element for Tailwind and custom styles
+  useState(() => {
+    if (typeof document !== "undefined") {
+      if (settings.themeMode === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    }
+  });
+
   const activeTheme = settings.themeMode === "light" ? LIGHT_THEME : DARK_THEME;
 
   const handleUpdateSettings = (newSettings: AppSettings) => {
     setSettings(newSettings);
+    if (typeof document !== "undefined") {
+      if (newSettings.themeMode === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    }
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(newSettings));
     } catch (e) {
@@ -145,10 +167,17 @@ export default function App() {
       else if (parsed.config) setMachineConfig(parsed.config);
 
       if (typeof parsed.code === "string") setCode(parsed.code);
+      setSelectedProgramId("");
     } catch (e) {
       console.error("Invalid JSON content", e);
       alert(settings.language === "fr" ? "Fichier JSON invalide." : "Invalid JSON file structure.");
     }
+  };
+
+  const handleSelectProgram = (program: { id: string; machineConfig: any; code: string }) => {
+    setSelectedProgramId(program.id);
+    setMachineConfig(program.machineConfig);
+    setCode(program.code);
   };
 
   return (
@@ -159,15 +188,20 @@ export default function App() {
         transition-colors duration-200 relative
         [&::-webkit-scrollbar]:w-2
         [&::-webkit-scrollbar-track]:bg-transparent
-        [&::-webkit-scrollbar-thumb]:bg-gray-600
+        [&::-webkit-scrollbar-thumb]:bg-slate-300
+        dark:[&::-webkit-scrollbar-thumb]:bg-gray-600
         [&::-webkit-scrollbar-thumb]:rounded-full
-        [&::-webkit-scrollbar-thumb:hover]:bg-gray-500
+        [&::-webkit-scrollbar-thumb:hover]:bg-slate-400
+        dark:[&::-webkit-scrollbar-thumb:hover]:bg-gray-500
       `}
     >
       <Header
         theme={activeTheme}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenHelp={() => setIsOnboardingOpen(true)}
         language={settings.language}
+        onSelectProgram={handleSelectProgram}
+        currentProgramId={selectedProgramId}
       />
 
       <main className="flex flex-1 w-full overflow-hidden">
@@ -224,7 +258,7 @@ export default function App() {
 
             {/* Collapsable Content */}
             {showIde && (
-              <div className={`flex-1 ${activeTheme.bgPanelInner} rounded-lg p-3 text-sm ${activeTheme.fontMono} ${activeTheme.textMuted} ${activeTheme.borderSubtle} border overflow-hidden flex flex-col h-64`}>
+              <div className={`flex-1 ${activeTheme.bgPanelInner} rounded-lg p-3 text-sm ${activeTheme.fontMono} ${activeTheme.borderSubtle} border overflow-hidden flex flex-col h-64`}>
                 <IDE 
                   code={code} 
                   onChange={setCode}
@@ -266,7 +300,12 @@ export default function App() {
             {/* Collapsable Content */}
             {showConfigWindow && (
               <div className={`flex-1 ${activeTheme.bgPanelInner} rounded-lg p-3 text-sm ${activeTheme.textMuted} ${activeTheme.borderSubtle} border overflow-y-auto`}>
-                <Config theme={activeTheme} language={settings.language} onChangeConfig={setMachineConfig} />
+                <Config
+                  theme={activeTheme}
+                  language={settings.language}
+                  onChangeConfig={setMachineConfig}
+                  externalConfig={machineConfig}
+                />
               </div>
             )}
           </div>
@@ -280,6 +319,18 @@ export default function App() {
         settings={settings}
         onUpdateSettings={handleUpdateSettings}
         theme={activeTheme}
+      />
+
+      <OnboardingModal
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
+        language={settings.language}
+        theme={activeTheme}
+        onLoadExample={() => {
+          if (PRELOADED_PROGRAMS.length > 0) {
+            handleSelectProgram(PRELOADED_PROGRAMS[0]);
+          }
+        }}
       />
 
       <Chatbot

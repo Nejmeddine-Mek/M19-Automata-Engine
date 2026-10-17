@@ -1,0 +1,14 @@
+{
+  "version": "1.0",
+  "machineConfig": {
+    "machineType": "TM",
+    "alphabet": [
+      "|",
+      "*"
+    ],
+    "right": "R",
+    "left": "L",
+    "emptyTape": "0"
+  },
+  "code": "initial: q0\nfinal: qf\nq0, |, R, q0\nq0, *, |, q0\nq0, 0, L, q1\nq1, |, 0, q2\nq2, 0, L, q2\nq2, |, 0, q3\nq3, 0, L, qf"
+}

@@ -324,12 +324,13 @@ export function useAutomataEngine(): EngineAPI {
           const tmConfig = config as TMConfig;
           const tmDef = definition as TMDefinition;
           initialTape.blankSymbol = tmConfig.emptyTape;
+          const padCount = 8;
           initialTape.tapeValue = (
-            tmDef.blankSymbol.repeat(12) +
+            tmDef.blankSymbol.repeat(padCount) +
             input +
-            tmDef.blankSymbol.repeat(12)
+            tmDef.blankSymbol.repeat(padCount)
           ).split("");
-          initialTape.currentHeadPosition = 8;
+          initialTape.currentHeadPosition = padCount;
         } else if (config.machineType === 'LBA') {
           const lbaDef = definition as LBADefinition;
           initialTape.tapeValue = (lbaDef.beginningSymbol + input + lbaDef.endSymbol).split("")

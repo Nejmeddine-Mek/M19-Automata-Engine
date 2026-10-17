@@ -1,0 +1,14 @@
+{
+  "version": "1.0",
+  "name": "TM: Invert Binary String (0 <-> 1)",
+  "description": "Scans across the tape, flips all 0s to 1s and 1s to 0s, and halts when reaching a blank symbol",
+  "machineConfig": {
+    "machineType": "TM",
+    "alphabet": ["0", "1", "⊔"],
+    "right": "R",
+    "left": "L",
+    "emptyTape": "⊔"
+  },
+  "code": "initial: q0\nfinal: q_halt\nq0, 0, 1, q1\nq1, 1, R, q0\nq0, 1, 0, q2\nq2, 0, R, q0\nq0, ⊔, ⊔, q_halt"
+}
+

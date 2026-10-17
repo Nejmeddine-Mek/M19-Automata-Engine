@@ -167,112 +167,48 @@ export default function OperationsModal({
         {/* Modal Header */}
         <div className={`flex items-center justify-between px-5 py-3.5 border-b ${theme.border}`}>
           <div className="flex items-center gap-2">
-            <span className="text-base">⚡</span>
+            <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
             <h3 className={`text-sm font-bold uppercase tracking-wider ${theme.fontMono} ${theme.textTitle}`}>
               {isFr ? "Hub des Opérations" : "Operations Hub"}
             </h3>
           </div>
           <button
             onClick={onClose}
-            className={`p-1 rounded-lg hover:bg-zinc-800 ${theme.textMuted} hover:text-white transition-colors cursor-pointer`}
+            className={`p-1.5 rounded-lg hover:${theme.bgPanelInner} ${theme.textMuted} hover:${theme.textInput} transition-colors cursor-pointer`}
           >
-            ✕
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
         {/* Options Stripe */}
-        <div className={`flex items-center gap-3 px-5 py-3 border-b ${theme.border} bg-zinc-950/40 overflow-x-auto`}>
-          <button
-            onClick={handleRunMirror}
-            className={`px-3 py-1.5 text-xs font-mono font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
-              activeOperation === "mirror" 
-                ? "bg-indigo-600 text-white" 
-                : `border border-zinc-700 ${theme.textMuted} hover:bg-zinc-800`
-            }`}
-          >
-            {isFr ? "Automate Miroir (L^R)" : "Mirror Automaton (L^R)"}
-          </button>
-          
-          <button
-            onClick={handleRunNfaToDfa}
-            className={`px-3 py-1.5 text-xs font-mono font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
-              activeOperation === "nfa2dfa" 
-                ? "bg-indigo-600 text-white" 
-                : `border border-zinc-700 ${theme.textMuted} hover:bg-zinc-800`
-            }`}
-          >
-            {isFr ? "Déterminisation (NFA → DFA)" : "Determinization (NFA → DFA)"}
-          </button>
-                    <button
-            onClick={handleDegeneralization}
-            className={`px-3 py-1.5 text-xs font-mono font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
-              activeOperation === "degeneralization" 
-                ? "bg-indigo-600 text-white" 
-                : `border border-zinc-700 ${theme.textMuted} hover:bg-zinc-800`
-            }`}
-          >
-            {isFr ? "Dégénéralisation (Mots → Caractères)" : "Degeneralization (Words → Characters)"}
-          </button>
-          <button
-            onClick={handleComplement}
-            className={`px-3 py-1.5 text-xs font-mono font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
-              activeOperation === "complement" 
-                ? "bg-indigo-600 text-white" 
-                : `border border-zinc-700 ${theme.textMuted} hover:bg-zinc-800`
-            }`}
-          >
-            {isFr ? "Complément (États Inversés)" : "Complement (Inverted States)"}
-          </button>
-          <button
-            onClick={handleTrimFsa}
-            className={`px-3 py-1.5 text-xs font-mono font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
-              activeOperation === "trim" 
-                ? "bg-indigo-600 text-white" 
-                : `border border-zinc-700 ${theme.textMuted} hover:bg-zinc-800`
-            }`}
-          >
-            {isFr ? "Élagage (Inaccessibles & Puits)" : "Trimming (Unreachable & Dead)"}
-          </button>
-          <button
-            onClick={handleFsaToRegex}
-            className={`px-3 py-1.5 text-xs font-mono font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
-              activeOperation === "dfaToRegex" 
-                ? "bg-indigo-600 text-white" 
-                : `border border-zinc-700 ${theme.textMuted} hover:bg-zinc-800`
-            }`}
-          >
-            {isFr ? "FSA vers Regex (Élimination)" : "FSA to Regex (State Elimination)"}
-          </button>
-          <button
-            onClick={handleFsaToGrammar}
-            className={`px-3 py-1.5 text-xs font-mono font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
-              activeOperation === "grammar" 
-                ? "bg-indigo-600 text-white" 
-                : `border border-zinc-700 ${theme.textMuted} hover:bg-zinc-800`
-            }`}
-          >
-            {isFr ? "DFA vers Grammaire" : "DFA to Grammar"}
-          </button>
-          <button
-            onClick={handleRunRegexToFsa}
-            className={`px-3 py-1.5 text-xs font-mono font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
-              activeOperation === "regexToFsa" 
-                ? "bg-indigo-600 text-white" 
-                : `border border-zinc-700 ${theme.textMuted} hover:bg-zinc-800`
-            }`}
-          >
-            {isFr ? "Regex vers FSA" : "Regex to FSA"}
-          </button>
-          <button
-            onClick={handleRunGrammarToFsa}
-            className={`px-3 py-1.5 text-xs font-mono font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
-              activeOperation === "grammarToFsa" 
-                ? "bg-indigo-600 text-white" 
-                : `border border-zinc-700 ${theme.textMuted} hover:bg-zinc-800`
-            }`}
-          >
-            {isFr ? "Grammaire vers FSA" : "Grammar to FSA"}
-          </button>
+        <div className={`flex items-center gap-2.5 px-5 py-3 border-b ${theme.border} bg-slate-100 dark:bg-zinc-950/40 overflow-x-auto`}>
+          {[
+            { id: "mirror", label: isFr ? "Automate Miroir (L^R)" : "Mirror Automaton (L^R)", handler: handleRunMirror },
+            { id: "nfa2dfa", label: isFr ? "Déterminisation (NFA → DFA)" : "Determinization (NFA → DFA)", handler: handleRunNfaToDfa },
+            { id: "degeneralization", label: isFr ? "Dégénéralisation (Mots → Caractères)" : "Degeneralization (Words → Characters)", handler: handleDegeneralization },
+            { id: "complement", label: isFr ? "Complément (États Inversés)" : "Complement (Inverted States)", handler: handleComplement },
+            { id: "trim", label: isFr ? "Élagage (Inaccessibles & Puits)" : "Trimming (Unreachable & Dead)", handler: handleTrimFsa },
+            { id: "dfaToRegex", label: isFr ? "FSA vers Regex (Élimination)" : "FSA to Regex (State Elimination)", handler: handleFsaToRegex },
+            { id: "grammar", label: isFr ? "DFA vers Grammaire" : "DFA to Grammar", handler: handleFsaToGrammar },
+            { id: "regexToFsa", label: isFr ? "Regex vers FSA" : "Regex to FSA", handler: handleRunRegexToFsa },
+            { id: "grammarToFsa", label: isFr ? "Grammaire vers FSA" : "Grammar to FSA", handler: handleRunGrammarToFsa },
+          ].map((op) => (
+            <button
+              key={op.id}
+              onClick={op.handler}
+              className={`px-3 py-1.5 text-xs font-mono font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
+                activeOperation === op.id
+                  ? "bg-indigo-600 text-white shadow-xs"
+                  : `border border-slate-300 dark:border-zinc-700 ${theme.textTitle} hover:bg-slate-200 dark:hover:bg-zinc-800`
+              }`}
+            >
+              {op.label}
+            </button>
+          ))}
         </div>
 
         {/* Modal Body: Side-by-Side Grid Layout */}
@@ -284,19 +220,19 @@ export default function OperationsModal({
           ) : (
             <>
               {/* Left Column: Interactive Graph */}
-              <div className={`flex items-center justify-center border ${theme.border} rounded-lg bg-zinc-950/30 p-2 overflow-hidden`}>
+              <div className={`flex items-center justify-center border ${theme.border} rounded-lg bg-slate-50 dark:bg-zinc-950/30 p-2 overflow-hidden`}>
                 <FSAGraph definition={currentStep.def} theme={theme} language={language} />
               </div>
 
               {/* Right Column: Explanation & Code Preview Panel */}
-              <div className={`p-4 border ${theme.border} rounded-lg bg-zinc-950/50 font-mono text-xs ${theme.textMuted} flex flex-col gap-2 overflow-y-auto max-h-[440px]`}>
-                <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                  <span className="font-bold text-sky-400 uppercase tracking-wide text-[10px]">
+              <div className={`p-4 border ${theme.border} rounded-lg bg-white dark:bg-zinc-950/50 font-mono text-xs flex flex-col gap-2 overflow-y-auto max-h-[440px] shadow-xs`}>
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-2">
+                  <span className="font-bold text-sky-700 dark:text-sky-400 uppercase tracking-wide text-[10px]">
                     {isFr ? `Étape ${currentStepIndex + 1} sur ${totalSteps}` : `Step ${currentStepIndex + 1} of ${totalSteps}`}
                   </span>
                 </div>
                 {/* whitespace-pre-line ensures \n translates to actual line breaks */}
-                <p className="whitespace-pre-line leading-relaxed text-zinc-200 mt-1">
+                <p className="whitespace-pre-line leading-relaxed text-slate-950 dark:text-zinc-200 mt-1 font-medium">
                   {currentStep.remark}
                 </p>
               </div>
@@ -305,11 +241,11 @@ export default function OperationsModal({
         </div>
 
         {/* Modal Footer Controls */}
-        <div className={`flex items-center justify-between px-5 py-3 border-t ${theme.border} bg-zinc-950/40`}>
+        <div className={`flex items-center justify-between px-5 py-3 border-t ${theme.border} bg-slate-100 dark:bg-zinc-950/40`}>
           <button
             onClick={() => setCurrentStepIndex((prev) => Math.max(0, prev - 1))}
             disabled={!hasSteps || currentStepIndex === 0}
-            className="px-3 py-1.5 text-xs font-mono font-medium rounded border border-zinc-700 text-zinc-300 hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+            className="px-3 py-1.5 text-xs font-mono font-medium rounded border border-slate-300 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
             {isFr ? "← Précédent" : "← Previous"}
           </button>
@@ -328,7 +264,7 @@ export default function OperationsModal({
             {!hasSteps 
               ? (isFr ? "En attente..." : "Waiting...") 
               : currentStepIndex === totalSteps - 1 
-                ? (isFr ? "✓ Terminer" : "✓ Finish") 
+                ? (isFr ? "Terminer" : "Finish") 
                 : (isFr ? "Suivant →" : "Next →")}
           </button>
         </div>

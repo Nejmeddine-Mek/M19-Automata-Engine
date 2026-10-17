@@ -264,8 +264,11 @@ export default function LBAGraph({ definition, activeStates = [], theme, languag
   return (
     <div className={`w-full flex flex-col items-center justify-center p-3 border ${theme.border} rounded-lg ${theme.bgPanelInner} shadow-sm select-none`}>
       <div className="flex items-center justify-between w-full mb-1 px-2">
-        <span className={`text-xs font-bold uppercase tracking-wider ${theme.fontMono} ${theme.textTitle}`}>
-          {isFr ? "⚙️ Diagramme de Transitions d'États LBA" : "⚙️ LBA State Transition Diagram"}
+        <span className={`text-xs font-bold uppercase tracking-wider ${theme.fontMono} ${theme.textTitle} flex items-center gap-1.5`}>
+          <svg className="w-3.5 h-3.5 text-sky-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <span>{isFr ? "Diagramme de Transitions d'États LBA" : "LBA State Transition Diagram"}</span>
         </span>
         <div className="flex items-center gap-3">
           <span className={`text-[10px] ${theme.fontMono} ${theme.textMuted}`}>

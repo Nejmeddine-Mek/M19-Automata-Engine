@@ -1,0 +1,24 @@
+{
+  "version": "1.0",
+  "machineConfig": {
+    "machineType": "LBA",
+    "alphabet": [
+      "a",
+      "b",
+      "c",
+      "x",
+      "y",
+      "z"
+    ],
+    "auxiliaryAlphabet": [
+      "x",
+      "y",
+      "z"
+    ],
+    "startSymbol": "C",
+    "endSymbol": "$",
+    "right": "R",
+    "left": "L"
+  },
+  "code": "initial: s0\nfinal: sf\ns0, C, R, s0\ns0, a, x, s1\ns1, x, R, s1\ns1, a, R, s1\ns1, y, R, s1\ns1, b, y, s2\ns2, y, R, s2\ns2, b, R, s2\ns2, z, R, s2\ns2, c, z, s3\ns3, z, L, s3\ns3, b, L, s3\ns3, y, L, s3\ns3, a, L, s3\ns3, x, R, s0\ns0, y, R, s4\ns4, y, R, s4\ns4, z, R, s4\ns4, $, R, sf"
+}

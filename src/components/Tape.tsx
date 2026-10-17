@@ -21,25 +21,25 @@ const hashString = (str: string): number => {
 
   return hash;
 }
-function getThreadColor(id: string, index: number, parentIndex?: number): { border: string; bg: string; text: string } {
+function getThreadColor(id: string, index: number, parentIndex?: number): { border: string; bg: string; text: string; triangle: string } {
   const hues = [
-    { border: 'border-sky-500',     bg: 'bg-sky-500/10',     text: 'text-sky-600' },
-    { border: 'border-indigo-500',  bg: 'bg-indigo-500/10',  text: 'text-indigo-600' },
-    { border: 'border-violet-500',  bg: 'bg-violet-500/10',  text: 'text-violet-600' },
-    { border: 'border-purple-500',  bg: 'bg-purple-500/10',  text: 'text-purple-600' },
-    { border: 'border-fuchsia-500', bg: 'bg-fuchsia-500/10', text: 'text-fuchsia-600' },
-    { border: 'border-pink-500',    bg: 'bg-pink-500/10',    text: 'text-pink-600' },
-    { border: 'border-rose-500',    bg: 'bg-rose-500/10',    text: 'text-rose-600' },
-    { border: 'border-red-500',     bg: 'bg-red-500/10',     text: 'text-red-600' },
-    { border: 'border-orange-500',  bg: 'bg-orange-500/10',  text: 'text-orange-600' },
-    { border: 'border-amber-500',   bg: 'bg-amber-500/10',   text: 'text-amber-600' },
-    { border: 'border-yellow-500',  bg: 'bg-yellow-500/10',  text: 'text-yellow-600' },
-    { border: 'border-lime-500',    bg: 'bg-lime-500/10',    text: 'text-lime-600' },
-    { border: 'border-green-500',   bg: 'bg-green-500/10',   text: 'text-green-600' },
-    { border: 'border-emerald-500', bg: 'bg-emerald-500/10', text: 'text-emerald-600' },
-    { border: 'border-teal-500',    bg: 'bg-teal-500/10',    text: 'text-teal-600' },
-    { border: 'border-cyan-500',    bg: 'bg-cyan-500/10',    text: 'text-cyan-600' },
-    { border: 'border-blue-500',    bg: 'bg-blue-500/10',    text: 'text-blue-600' },
+    { border: 'border-sky-500',     bg: 'bg-sky-500/10',     text: 'text-sky-700 dark:text-sky-400',       triangle: 'border-b-sky-700 dark:border-b-sky-400' },
+    { border: 'border-indigo-500',  bg: 'bg-indigo-500/10',  text: 'text-indigo-700 dark:text-indigo-400', triangle: 'border-b-indigo-700 dark:border-b-indigo-400' },
+    { border: 'border-violet-500',  bg: 'bg-violet-500/10',  text: 'text-violet-700 dark:text-violet-400', triangle: 'border-b-violet-700 dark:border-b-violet-400' },
+    { border: 'border-purple-500',  bg: 'bg-purple-500/10',  text: 'text-purple-700 dark:text-purple-400', triangle: 'border-b-purple-700 dark:border-b-purple-400' },
+    { border: 'border-fuchsia-500', bg: 'bg-fuchsia-500/10', text: 'text-fuchsia-700 dark:text-fuchsia-400', triangle: 'border-b-fuchsia-700 dark:border-b-fuchsia-400' },
+    { border: 'border-pink-500',    bg: 'bg-pink-500/10',    text: 'text-pink-700 dark:text-pink-400',     triangle: 'border-b-pink-700 dark:border-b-pink-400' },
+    { border: 'border-rose-500',    bg: 'bg-rose-500/10',    text: 'text-rose-700 dark:text-rose-400',     triangle: 'border-b-rose-700 dark:border-b-rose-400' },
+    { border: 'border-red-500',     bg: 'bg-red-500/10',     text: 'text-red-700 dark:text-red-400',       triangle: 'border-b-red-700 dark:border-b-red-400' },
+    { border: 'border-orange-500',  bg: 'bg-orange-500/10',  text: 'text-orange-700 dark:text-orange-400', triangle: 'border-b-orange-700 dark:border-b-orange-400' },
+    { border: 'border-amber-500',   bg: 'bg-amber-500/10',   text: 'text-amber-800 dark:text-amber-400',   triangle: 'border-b-amber-800 dark:border-b-amber-400' },
+    { border: 'border-yellow-500',  bg: 'bg-yellow-500/10',  text: 'text-yellow-800 dark:text-yellow-400', triangle: 'border-b-yellow-800 dark:border-b-yellow-400' },
+    { border: 'border-lime-500',    bg: 'bg-lime-500/10',    text: 'text-lime-800 dark:text-lime-400',     triangle: 'border-b-lime-800 dark:border-b-lime-400' },
+    { border: 'border-green-500',   bg: 'bg-green-500/10',   text: 'text-green-800 dark:text-green-400',   triangle: 'border-b-green-800 dark:border-b-green-400' },
+    { border: 'border-emerald-500', bg: 'bg-emerald-500/10', text: 'text-emerald-800 dark:text-emerald-400', triangle: 'border-b-emerald-800 dark:border-b-emerald-400' },
+    { border: 'border-teal-500',    bg: 'bg-teal-500/10',    text: 'text-teal-800 dark:text-teal-400',     triangle: 'border-b-teal-800 dark:border-b-teal-400' },
+    { border: 'border-cyan-500',    bg: 'bg-cyan-500/10',    text: 'text-cyan-800 dark:text-cyan-400',     triangle: 'border-b-cyan-800 dark:border-b-cyan-400' },
+    { border: 'border-blue-500',    bg: 'bg-blue-500/10',    text: 'text-blue-700 dark:text-blue-400',     triangle: 'border-b-blue-700 dark:border-b-blue-400' },
   ];
 
   
@@ -84,13 +84,13 @@ export default function Tape({
             </span>
           )}
           {currentState && (
-            <span className={`px-2 py-0.5 text-[10px] font-bold ${theme.fontMono} rounded bg-zinc-800/90 border border-zinc-700 text-cyan-400 shadow-xs`}>
-              State: <span className="text-zinc-100">{currentState}</span>
+            <span className={`px-2 py-0.5 text-[10px] font-bold ${theme.fontMono} rounded bg-slate-100 dark:bg-zinc-800/90 border border-slate-300 dark:border-zinc-700 text-sky-700 dark:text-cyan-400 shadow-xs`}>
+              State: <span className="text-slate-900 dark:text-zinc-100">{currentState}</span>
             </span>
           )}
           {lastInstruction && (
-            <span className={`px-2 py-0.5 text-[10px] font-bold ${theme.fontMono} rounded bg-amber-500/10 border border-amber-500/30 text-amber-400`}>
-              Instr: <span className="text-amber-200">{lastInstruction}</span>
+            <span className={`px-2 py-0.5 text-[10px] font-bold ${theme.fontMono} rounded bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300`}>
+              Instr: <span className="text-amber-900 dark:text-amber-200">{lastInstruction}</span>
             </span>
           )}
           {status && status !== 'ACTIVE' && (
@@ -126,7 +126,7 @@ export default function Tape({
                   ${theme.fontMono} text-sm font-bold
                   ${isHead 
                     ? `${accent.bg} ${accent.border} border-2 ${accent.text} shadow-md z-10 scale-105` 
-                    : `${theme.bgInput} ${theme.borderSubtle} ${theme.textInput} opacity-80`
+                    : `${theme.bgInput} ${theme.border} ${theme.textInput} shadow-2xs`
                   }`}
               >
                 <span>{symbol}</span>
@@ -137,7 +137,7 @@ export default function Tape({
 
         {/* Fixed Center R/W Head Indicator */}
         <div className="flex flex-col items-center justify-center mt-1 z-20 pointer-events-none">
-          <div className={`w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[8px] ${accent.text.replace('text-', 'border-b-')}`} />
+          <div className={`w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[8px] ${accent.triangle}`} />
           <div className={`text-[10px] font-bold uppercase tracking-wider ${theme.fontMono} ${accent.text}`}>
             ▲ R/W Head
           </div>

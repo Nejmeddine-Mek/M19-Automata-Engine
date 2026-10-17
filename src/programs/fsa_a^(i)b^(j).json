@@ -1,0 +1,12 @@
+{
+  "version": "1.0",
+  "machineConfig": {
+    "machineType": "FSA",
+    "alphabet": [
+      "a",
+      "b"
+    ],
+    "epsilon": "e"
+  },
+  "code": "initial: q0\nfinal: q1, q0\nq0, a, q0\nq0, b, q1"
+}

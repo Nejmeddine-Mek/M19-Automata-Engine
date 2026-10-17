@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { ThemeType } from '../App';
 import type { FSAConfig, LBAConfig, PDAConfig, TMConfig } from '../models/interfaces/configs';
 
@@ -8,9 +8,10 @@ interface ConfigProps {
   theme: ThemeType; // Replace with your actual theme type
   language?: "en" | "fr";
   onChangeConfig: (config: FSAConfig | PDAConfig | LBAConfig | TMConfig | null) => void;
+  externalConfig?: FSAConfig | PDAConfig | LBAConfig | TMConfig | null;
 }
 
-export default function Config({ theme, language = "en", onChangeConfig }: ConfigProps) {
+export default function Config({ theme, language = "en", onChangeConfig, externalConfig }: ConfigProps) {
   const [selectedType, setSelectedType] = useState<AutomatonType>('FSA');
 
   const isFr = language === "fr";
@@ -26,11 +27,37 @@ export default function Config({ theme, language = "en", onChangeConfig }: Confi
   // LBA Specific
   const [leftBoundSymbol, setLeftBoundSymbol] = useState('C');
   const [rightBoundSymbol, setRightBoundSymbol] = useState('$');
-  const [auxiliaryAlphabet, setAuxiliaryAlphabet] = useState('x, y, z')
+  const [auxiliaryAlphabet, setAuxiliaryAlphabet] = useState('x, y, z');
   // TM Specific
   const [blankSymbol, setBlankSymbol] = useState('⊔');
-  const [rightSymbol, setRightSymbol] = useState('R')
-  const [leftSymbol, setLeftSymbol] = useState('L')
+  const [rightSymbol, setRightSymbol] = useState('R');
+  const [leftSymbol, setLeftSymbol] = useState('L');
+
+  // Sync internal state when externalConfig is loaded from a pre-loaded program or file
+  useEffect(() => {
+    if (!externalConfig) return;
+    setSelectedType(externalConfig.machineType as AutomatonType);
+
+    if (externalConfig.machineType === 'FSA') {
+      const fsa = externalConfig as FSAConfig;
+      if (fsa.alphabet) setAlphabet(fsa.alphabet.join(', '));
+      if (fsa.epsilon) setEpsilonSymbol(fsa.epsilon);
+    } else if (externalConfig.machineType === 'TM') {
+      const tm = externalConfig as TMConfig;
+      if (tm.alphabet) setAlphabet(tm.alphabet.join(', '));
+      if (tm.emptyTape) setBlankSymbol(tm.emptyTape);
+      if (tm.right) setRightSymbol(tm.right);
+      if (tm.left) setLeftSymbol(tm.left);
+    } else if (externalConfig.machineType === 'LBA') {
+      const lba = externalConfig as LBAConfig;
+      if (lba.alphabet) setAlphabet(lba.alphabet.join(', '));
+      if (lba.auxiliaryAlphabet) setAuxiliaryAlphabet(lba.auxiliaryAlphabet.join(', '));
+      if (lba.startSymbol) setLeftBoundSymbol(lba.startSymbol);
+      if (lba.endSymbol) setRightBoundSymbol(lba.endSymbol);
+      if (lba.right) setRightSymbol(lba.right);
+      if (lba.left) setLeftSymbol(lba.left);
+    }
+  }, [externalConfig]);
 
   // UI state for saved feedback
   const [saved, setSaved] = useState(false);
@@ -347,8 +374,11 @@ export default function Config({ theme, language = "en", onChangeConfig }: Confi
       {/* Save Action Bar */}
       <div className="flex items-center justify-between pt-1">
         {saved ? (
-          <span className="text-xs font-mono text-emerald-600 font-medium">
-            {isFr ? "✓ Enregistré" : "✓ Saved"}
+          <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>{isFr ? "Enregistré" : "Saved"}</span>
           </span>
         ) : (
           <span />

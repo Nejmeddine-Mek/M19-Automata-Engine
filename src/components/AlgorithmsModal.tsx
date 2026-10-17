@@ -357,7 +357,9 @@ export default function AlgorithmsModal({
         {/* Header */}
         <div className={`flex items-center justify-between px-6 py-4 border-b ${theme.borderSubtle} ${theme.bgPanelInner}`}>
           <div className="flex items-center gap-2.5">
-            <span className="text-xl">📖</span>
+            <svg className="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
             <div>
               <h2 className={`text-base font-bold ${theme.fontMono} ${theme.textInput}`}>
                 {isFr ? "Bibliothèque d'Algorithmes" : "Algorithms Reference Library"}
@@ -371,7 +373,9 @@ export default function AlgorithmsModal({
             onClick={onClose}
             className={`p-1.5 rounded-lg ${theme.textMuted} hover:${theme.textInput} transition-colors cursor-pointer text-sm`}
           >
-            ✕
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
@@ -384,7 +388,7 @@ export default function AlgorithmsModal({
               className={`px-3 py-1.5 text-xs font-mono font-medium rounded-xl transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === algo.id
                   ? "bg-indigo-600 text-white shadow-sm font-semibold"
-                  : `border border-zinc-700/60 ${theme.textMuted} hover:bg-zinc-800`
+                  : `border border-slate-300 dark:border-zinc-700/60 ${theme.textMuted} hover:bg-slate-100 dark:hover:bg-zinc-800`
               }`}
             >
               {isFr ? algo.titleFr : algo.titleEn}
@@ -399,7 +403,7 @@ export default function AlgorithmsModal({
               <span className={`text-[10px] uppercase tracking-wider font-bold block mb-1 ${theme.textMuted}`}>
                 {isFr ? "Complexité" : "Complexity"}
               </span>
-              <span className="text-indigo-400 font-bold">{currentAlgo.complexity}</span>
+              <span className="text-indigo-600 dark:text-indigo-400 font-bold">{currentAlgo.complexity}</span>
             </div>
             <div className={`p-3 rounded-xl border ${theme.borderSubtle} ${theme.bgPanelInner}`}>
               <span className={`text-[10px] uppercase tracking-wider font-bold block mb-1 ${theme.textMuted}`}>
@@ -415,18 +419,18 @@ export default function AlgorithmsModal({
             </div>
           </div>
 
-          <div className={`p-3.5 rounded-xl border border-indigo-500/20 bg-indigo-950/20 ${theme.textInput}`}>
-            <span className="font-bold text-indigo-400 mr-2">📌 Objective:</span>
+          <div className="p-3.5 rounded-xl border border-indigo-200 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-950/20 text-slate-900 dark:text-zinc-200 font-medium">
+            <span className="font-bold text-indigo-700 dark:text-indigo-400 mr-2">Objective:</span>
             {isFr ? currentAlgo.descriptionFr : currentAlgo.descriptionEn}
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className={`text-xs font-bold uppercase tracking-wider ${theme.textMuted}`}>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-400">
                 Pseudo-code:
               </span>
             </div>
-            <pre className="p-4 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-200 overflow-x-auto text-[11px] leading-relaxed selection:bg-indigo-500 selection:text-white">
+            <pre className="p-4 rounded-xl bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-800 text-slate-950 dark:text-zinc-100 overflow-x-auto text-[11px] font-mono font-medium leading-relaxed shadow-xs selection:bg-indigo-500 selection:text-white">
               <code>{currentAlgo.pseudocode}</code>
             </pre>
           </div>
@@ -436,7 +440,7 @@ export default function AlgorithmsModal({
         <div className={`flex items-center justify-end px-6 py-3 border-t ${theme.borderSubtle} ${theme.bgPanelInner}`}>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 text-xs font-mono font-medium rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition-colors cursor-pointer"
+            className="px-4 py-1.5 text-xs font-mono font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 border border-slate-300 dark:border-zinc-700 transition-colors cursor-pointer shadow-xs"
           >
             {isFr ? "Fermer" : "Close"}
           </button>

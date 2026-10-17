@@ -134,9 +134,11 @@ export function ExecSpace({
             onClick={onStepBack}
             disabled={!canStepBack || isExecuting}
             title={isFr ? "Reculer" : "Step Back"}
-            className="px-2.5 py-1.5 text-xs font-semibold font-mono bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 rounded text-zinc-200 cursor-pointer"
+            className="px-2.5 py-1.5 text-xs font-semibold font-mono bg-slate-200 hover:bg-slate-300 text-slate-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 disabled:opacity-40 rounded cursor-pointer transition-colors border border-slate-300 dark:border-zinc-700 flex items-center justify-center"
           >
-            ◀
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
           </button>
 
           {/* Step Forward */}
@@ -145,9 +147,12 @@ export function ExecSpace({
             onClick={onStep}
             disabled={isHalted || isExecuting}
             title={isFr ? "Avancer d'un pas" : "Step Forward"}
-            className="px-3 py-1.5 text-xs font-semibold font-mono bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 rounded text-zinc-200 cursor-pointer"
+            className="px-3 py-1.5 text-xs font-semibold font-mono bg-slate-200 hover:bg-slate-300 text-slate-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 disabled:opacity-40 rounded cursor-pointer transition-colors border border-slate-300 dark:border-zinc-700 flex items-center gap-1"
           >
-            {isFr ? "Pas ▶" : "Step ▶"}
+            <span>{isFr ? "Pas" : "Step"}</span>
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
           </button>
 
           {/* History Forward */}
@@ -156,9 +161,11 @@ export function ExecSpace({
             onClick={onStepForward}
             disabled={!canStepForward || isExecuting}
             title={isFr ? "Avancer (Historique)" : "Step Forward (History)"}
-            className="px-2.5 py-1.5 text-xs font-semibold font-mono bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 rounded text-zinc-200 cursor-pointer"
+            className="px-2.5 py-1.5 text-xs font-semibold font-mono bg-slate-200 hover:bg-slate-300 text-slate-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 disabled:opacity-40 rounded cursor-pointer transition-colors border border-slate-300 dark:border-zinc-700 flex items-center justify-center"
           >
-            ▶
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
           </button>
 
           {/* Run / Pause Toggle */}
@@ -166,18 +173,25 @@ export function ExecSpace({
             <button
               type="button"
               onClick={onPause}
-              className="px-4 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider bg-amber-600 hover:bg-amber-500 text-white rounded transition-all shadow-sm cursor-pointer"
+              className="px-4 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider bg-amber-600 hover:bg-amber-500 text-white rounded transition-all shadow-sm cursor-pointer flex items-center gap-1.5"
             >
-              Pause
+              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                <rect x="6" y="4" width="4" height="16" rx="1" />
+                <rect x="14" y="4" width="4" height="16" rx="1" />
+              </svg>
+              <span>Pause</span>
             </button>
           ) : (
             <button
               type="button"
               onClick={onRun}
               disabled={isHalted || activeTapes.length === 0}
-              className="px-4 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white rounded transition-all shadow-sm cursor-pointer"
+              className="px-4 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white rounded transition-all shadow-sm cursor-pointer flex items-center gap-1.5"
             >
-              {isFr ? "Exécuter" : "Run"}
+              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+              <span>{isFr ? "Exécuter" : "Run"}</span>
             </button>
           )}
 
@@ -205,8 +219,10 @@ export function ExecSpace({
             <button
               type="button"
               onClick={() => setShowDiagram(!showDiagram)}
-              className={`px-3 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider rounded transition-all shadow-sm cursor-pointer ${
-                showDiagram ? 'bg-cyan-600 text-white hover:bg-cyan-500' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+              className={`px-3 py-1.5 text-xs font-semibold font-mono uppercase tracking-wider rounded transition-all shadow-sm cursor-pointer border ${
+                showDiagram 
+                  ? 'bg-cyan-600 text-white hover:bg-cyan-500 border-cyan-500' 
+                  : 'bg-slate-200 text-slate-700 hover:bg-slate-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 border-slate-300 dark:border-zinc-700'
               }`}
             >
               {showDiagram ? (isFr ? 'Masquer Schéma' : 'Hide Diagram') : (isFr ? 'Afficher Schéma' : 'Show Diagram')}
@@ -227,10 +243,12 @@ export function ExecSpace({
 
       {/* ── Prominent Error Banner Display ────────────────────────── */}
       {errorMessage && (
-        <div className="mx-3 my-2 p-3 bg-rose-950/90 border border-rose-600 rounded-md text-xs font-mono text-rose-200 flex items-start gap-2.5 shadow-md">
-          <span className="text-lg leading-none shrink-0">⚠️</span>
+        <div className="mx-3 my-2 p-3 bg-rose-50 border border-rose-300 text-rose-900 dark:bg-rose-950/90 dark:border-rose-600 dark:text-rose-200 rounded-md text-xs font-mono flex items-start gap-2.5 shadow-sm">
+          <svg className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
           <div className="flex-1">
-            <span className="font-bold block uppercase tracking-wider text-rose-400 mb-0.5">
+            <span className="font-bold block uppercase tracking-wider text-rose-700 dark:text-rose-400 mb-0.5">
               {isFr ? "Erreur de Syntaxe / Exécution" : "Syntax / Execution Error"}
             </span>
             <span className="leading-relaxed">{errorMessage}</span>
@@ -241,14 +259,36 @@ export function ExecSpace({
       {/* Status Bar Banner */}
       {!errorMessage && (isAccepted || isRejected || isHalted) && (
         <div className={`px-4 py-1.5 text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-between border-b ${theme.borderSubtle} ${
-          isAccepted ? 'bg-emerald-950/60 text-emerald-400' : isRejected ? 'bg-rose-950/60 text-rose-400' : 'bg-amber-950/60 text-amber-400'
+          isAccepted 
+            ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400' 
+            : isRejected 
+            ? 'bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-400' 
+            : 'bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400'
         }`}>
-          <span>
-            {isAccepted
-              ? (isFr ? '✓ Entrée Acceptée' : '✓ Input Accepted')
-              : isRejected
-              ? (isFr ? '✗ Entrée Rejetée' : '✗ Input Rejected')
-              : (isFr ? '⏸ Exécution Arrêtée' : '⏸ Execution Halted')}
+          <span className="flex items-center gap-1.5">
+            {isAccepted ? (
+              <>
+                <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>{isFr ? 'Entrée Acceptée' : 'Input Accepted'}</span>
+              </>
+            ) : isRejected ? (
+              <>
+                <svg className="w-4 h-4 text-rose-600 dark:text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <span>{isFr ? 'Entrée Rejetée' : 'Input Rejected'}</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" fill="currentColor" viewBox="0 0 24 24">
+                  <rect x="6" y="4" width="4" height="16" rx="1" />
+                  <rect x="14" y="4" width="4" height="16" rx="1" />
+                </svg>
+                <span>{isFr ? 'Exécution Arrêtée' : 'Execution Halted'}</span>
+              </>
+            )}
           </span>
           <span className="text-[10px] opacity-80">
             {isFr ? "Nombre de pas:" : "Step Count:"} {executionStatus.stepCount}

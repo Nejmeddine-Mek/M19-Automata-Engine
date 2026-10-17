@@ -1,0 +1,12 @@
+{
+  "version": "1.0",
+  "name": "FSA: Ends with 'ab'",
+  "description": "Recognizes words over {a, b} that end with the suffix 'ab'",
+  "machineConfig": {
+    "machineType": "FSA",
+    "alphabet": ["a", "b"],
+    "epsilon": "e"
+  },
+  "code": "initial: q0\nfinal: q2\nq0, a, q0\nq0, b, q0\nq0, a, q1\nq1, b, q2"
+}
+

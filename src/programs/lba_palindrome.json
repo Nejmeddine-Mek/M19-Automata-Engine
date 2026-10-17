@@ -1,0 +1,16 @@
+{
+  "version": "1.0",
+  "name": "LBA: Palindrome Checker (a, b)",
+  "description": "Checks whether an input string between markers 'C' and '$' is a palindrome",
+  "machineConfig": {
+    "machineType": "LBA",
+    "alphabet": ["a", "b", "X"],
+    "auxiliaryAlphabet": ["X", "Y"],
+    "startSymbol": "C",
+    "endSymbol": "$",
+    "right": "R",
+    "left": "L"
+  },
+  "code": "initial: q_start\nfinal: q_accept\nq_start, C, R, q_scan\nq_scan, X, R, q_scan\nq_scan, Y, R, q_scan\nq_scan, a, X, q_match_a_right\nq_scan, b, Y, q_match_b_right\nq_scan, $, R, q_accept\nq_match_a_right, a, R, q_match_a_right\nq_match_a_right, b, R, q_match_a_right\nq_match_a_right, X, R, q_match_a_right\nq_match_a_right, Y, R, q_match_a_right\nq_match_a_right, $, L, q_check_a\nq_check_a, X, L, q_check_a\nq_check_a, Y, L, q_check_a\nq_check_a, a, X, q_rewind\nq_match_b_right, a, R, q_match_b_right\nq_match_b_right, b, R, q_match_b_right\nq_match_b_right, X, R, q_match_b_right\nq_match_b_right, Y, R, q_match_b_right\nq_match_b_right, $, L, q_check_b\nq_check_b, X, L, q_check_b\nq_check_b, Y, L, q_check_b\nq_check_b, b, Y, q_rewind\nq_rewind, a, L, q_rewind\nq_rewind, b, L, q_rewind\nq_rewind, X, L, q_rewind\nq_rewind, Y, L, q_rewind\nq_rewind, C, R, q_scan"
+}
+
