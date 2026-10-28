@@ -3,6 +3,7 @@ import type { ThemeType } from "../App";
 import AlgorithmsModal from "./AlgorithmsModal";
 import DocsModal from "./DocsModal";
 import { PRELOADED_PROGRAMS, type PreloadedProgram } from "../utils/programLoader";
+import automaLabLogo from "../assets/automaLab_logo.svg"
 
 interface HeaderProps {
   theme: ThemeType;
@@ -30,12 +31,22 @@ export default function Header({
       {/* ── Left Side: Logo & Title ──────────────────────────────────── */}
       <div className="flex items-center space-x-3">
         {/* Logo Icon */}
-        <div className="w-10 h-10 rounded-xl bg-sky-500 flex items-center justify-center font-bold text-white shadow-inner">
-          M
-        </div>
+        <div 
+            className="w-20 h-20 bg-gradient-to-tr from-blue-600 via-indigo-500 to-cyan-400 shrink-0"
+            style={{
+              maskImage: `url("${automaLabLogo}")`,
+              WebkitMaskImage: `url("${automaLabLogo}")`,
+              maskSize: 'contain',
+              WebkitMaskSize: 'contain',
+              maskRepeat: 'no-repeat',
+              WebkitMaskRepeat: 'no-repeat',
+              maskPosition: 'center',
+              WebkitMaskPosition: 'center',
+            }}
+          />
         <div>
           <h1 className={`text-xl font-bold tracking-wide ${theme.textInput}`}>
-            M19 Automata Simulator
+            AutomaLab
           </h1>
           <span className={`text-[11px] font-mono ${theme.textMuted} hidden sm:block`}>
             {isFr ? "Simulateur Théorique & Moteur d'Exécution" : "Theoretical Simulator & Execution Engine"}

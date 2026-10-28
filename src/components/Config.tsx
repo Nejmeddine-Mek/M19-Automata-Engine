@@ -29,7 +29,7 @@ export default function Config({ theme, language = "en", onChangeConfig, externa
   const [rightBoundSymbol, setRightBoundSymbol] = useState('$');
   const [auxiliaryAlphabet, setAuxiliaryAlphabet] = useState('x, y, z');
   // TM Specific
-  const [blankSymbol, setBlankSymbol] = useState('⊔');
+  const [blankSymbol, setBlankSymbol] = useState('0');
   const [rightSymbol, setRightSymbol] = useState('R');
   const [leftSymbol, setLeftSymbol] = useState('L');
 
